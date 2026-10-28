@@ -12,6 +12,7 @@ import {
   Users,
   Shuffle,
   Edit3,
+  ArrowLeft,
 } from "lucide-react";
 import type { TournamentState } from "@/lib/types";
 import {
@@ -25,6 +26,8 @@ import ChampionCelebration from "./ChampionCelebration";
 
 export default function BracketGenerator() {
   const [state, setState] = useState<TournamentState>(INITIAL_STATE);
+  const [backupState, setBackupState] = useState<TournamentState | null>(null);
+  const [isEditingPlayers, setIsEditingPlayers] = useState(false);
   const [newPlayer, setNewPlayer] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -79,7 +82,12 @@ export default function BracketGenerator() {
       participants: [...state.participants, name],
     };
     setNewPlayer("");
-    saveState(newState);
+    setError(null);
+    if (isEditingPlayers) {
+      setState(newState);
+    } else {
+      saveState(newState);
+    }
   };
 
   const removePlayer = (name: string) => {
@@ -87,7 +95,11 @@ export default function BracketGenerator() {
       ...state,
       participants: state.participants.filter((p) => p !== name),
     };
-    saveState(newState);
+    if (isEditingPlayers) {
+      setState(newState);
+    } else {
+      saveState(newState);
+    }
   };
 
   const shufflePlayers = () => {
@@ -96,7 +108,11 @@ export default function BracketGenerator() {
       ...state,
       participants: shuffled,
     };
-    saveState(newState);
+    if (isEditingPlayers) {
+      setState(newState);
+    } else {
+      saveState(newState);
+    }
   };
 
   const handleGenerate = () => {
@@ -104,8 +120,10 @@ export default function BracketGenerator() {
       setError("Se necesitan al menos 2 jugadores para armar el bracket.");
       return;
     }
-    const newState = generateBracket(state.participants);
+    const newState = generateBracket(state.participants, state.leaderboard);
     saveState(newState);
+    setIsEditingPlayers(false);
+    setBackupState(null);
   };
 
   const handleSelectWinner = (matchId: string, winner: string) => {
@@ -119,18 +137,26 @@ export default function BracketGenerator() {
   };
 
   const handleEditBracket = () => {
-    saveState({
-      ...state,
-      generated: false,
-      matches: [],
-      champion: null,
-    });
+    setBackupState(state);
+    setIsEditingPlayers(true);
+    setError(null);
+  };
+
+  const handleCancelEdit = () => {
+    if (backupState) {
+      setState(backupState);
+    }
+    setIsEditingPlayers(false);
+    setBackupState(null);
+    setError(null);
   };
 
   const handleReset = () => {
     if (
       confirm("¿Reiniciar todo el torneo? Se perderán todos los datos y jugadores.")
     ) {
+      setIsEditingPlayers(false);
+      setBackupState(null);
       saveState(INITIAL_STATE);
     }
   };
@@ -166,25 +192,34 @@ export default function BracketGenerator() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {state.generated && (
+          {state.generated && !isEditingPlayers && (
             <button
               onClick={handleEditBracket}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[#24262e] border border-[#282a32] hover:border-[#FF5500] rounded transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[#24262e] border border-[#282a32] hover:border-[#FF5500] rounded transition-colors cursor-pointer"
             >
               <Edit3 size={13} className="text-[#FF5500]" />
               Modificar Jugadores
             </button>
           )}
+          {isEditingPlayers && (
+            <button
+              onClick={handleCancelEdit}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] rounded transition-colors cursor-pointer"
+            >
+              <ArrowLeft size={13} className="text-[#FF5500]" />
+              Cancelar Edición
+            </button>
+          )}
           <button
             onClick={fetchState}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#8d939e] hover:text-white bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] rounded transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#8d939e] hover:text-white bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] rounded transition-colors cursor-pointer"
           >
             <RefreshCw size={13} />
             Sincronizar
           </button>
           <button
             onClick={handleReset}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-400 bg-red-950/20 border border-red-500/30 rounded hover:bg-red-950/40 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-400 bg-red-950/20 border border-red-500/30 rounded hover:bg-red-950/40 transition-colors cursor-pointer"
           >
             <Trash2 size={13} />
             Reiniciar Todo
@@ -199,7 +234,7 @@ export default function BracketGenerator() {
           <span className="flex-1">{error}</span>
           <button
             onClick={() => setError(null)}
-            className="text-[#8d939e] hover:text-white font-bold ml-2"
+            className="text-[#8d939e] hover:text-white font-bold ml-2 cursor-pointer"
           >
             ✕
           </button>
@@ -207,12 +242,12 @@ export default function BracketGenerator() {
       )}
 
       {/* Champion Celebration Overlay (Full-screen celebration with FaceIT orange aura & gradual fade) */}
-      {state.champion && (
+      {state.champion && !isEditingPlayers && (
         <ChampionCelebration champion={state.champion} />
       )}
 
       {/* Champion Banner FaceIT Style */}
-      {state.champion && (
+      {state.champion && !isEditingPlayers && (
         <div className="relative overflow-hidden bg-gradient-to-r from-[#1a1b1f] via-[#22242a] to-[#1a1b1f] border-2 border-[#FF5500] rounded-xl p-8 text-center shadow-faceit-orange animate-fade-in-up">
           <div className="shimmer absolute inset-0 pointer-events-none" />
           <div className="w-16 h-16 rounded-full bg-[#FF5500]/20 border border-[#FF5500]/50 flex items-center justify-center mx-auto mb-3 text-[#FF5500]">
@@ -227,20 +262,40 @@ export default function BracketGenerator() {
         </div>
       )}
 
-      {/* Player Management (Before generation) */}
-      {!state.generated && (
+      {/* Player Management (Before generation or while editing) */}
+      {(!state.generated || isEditingPlayers) && (
         <div className="bg-[#1a1b1f] border border-[#282a32] rounded-xl p-6 space-y-5 shadow-xl animate-fade-in-up">
+          {/* Warning banner when in edit mode */}
+          {isEditingPlayers && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-amber-950/20 border border-amber-500/40 rounded-lg text-xs text-amber-200">
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={16} className="text-amber-400 shrink-0" />
+                <span>
+                  <strong>Modo edición activo:</strong> Puedes modificar la lista de jugadores. Si confirmas con <strong>"Regenerar Bracket"</strong> se reiniciará el cuadro. Si te arrepientes, pulsa <strong>"Cancelar"</strong> para volver al bracket actual sin perder nada.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="px-3 py-1.5 bg-[#141518] hover:bg-[#22242a] text-white border border-[#282a32] hover:border-[#FF5500] rounded text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 self-end sm:self-auto"
+              >
+                <ArrowLeft size={13} />
+                Cancelar y Volver
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center justify-between border-b border-[#282a32] pb-3">
             <h3 className="text-xs font-extrabold uppercase tracking-widest text-white flex items-center gap-2">
               <Users size={16} className="text-[#FF5500]" />
-              Inscripción de Jugadores
+              {isEditingPlayers ? "Modificar Jugadores del Torneo" : "Inscripción de Jugadores"}
             </h3>
             <div className="flex items-center gap-2">
               {state.participants.length >= 2 && (
                 <button
                   type="button"
                   onClick={shufflePlayers}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold text-[#8d939e] hover:text-white bg-[#141518] border border-[#282a32] rounded hover:border-[#FF5500] transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold text-[#8d939e] hover:text-white bg-[#141518] border border-[#282a32] rounded hover:border-[#FF5500] transition-colors cursor-pointer"
                 >
                   <Shuffle size={12} className="text-[#FF5500]" />
                   Mezclar Orden
@@ -264,7 +319,7 @@ export default function BracketGenerator() {
             />
             <button
               onClick={addPlayer}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#FF5500] hover:bg-[#ff6b1a] text-white text-xs font-extrabold uppercase tracking-wider rounded-lg transition-all shadow-md shadow-[#FF5500]/20"
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#FF5500] hover:bg-[#ff6b1a] text-white text-xs font-extrabold uppercase tracking-wider rounded-lg transition-all shadow-md shadow-[#FF5500]/20 cursor-pointer"
             >
               <UserPlus size={14} />
               Añadir
@@ -290,7 +345,7 @@ export default function BracketGenerator() {
                   <button
                     onClick={() => removePlayer(player)}
                     title="Eliminar jugador"
-                    className="text-[#8d939e] hover:text-red-400 transition-colors opacity-70 group-hover:opacity-100"
+                    className="text-[#8d939e] hover:text-red-400 transition-colors opacity-70 group-hover:opacity-100 cursor-pointer"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -299,24 +354,41 @@ export default function BracketGenerator() {
             </div>
           )}
 
-          {/* Generate Button */}
-          {state.participants.length >= 2 ? (
-            <button
-              onClick={handleGenerate}
-              className="w-full py-3.5 bg-gradient-to-r from-[#FF5500] to-[#E04B00] text-white font-black uppercase tracking-wider rounded-lg hover:from-[#ff6b1a] hover:to-[#FF5500] transition-all shadow-xl shadow-[#FF5500]/25"
-            >
-              Generar Bracket Oficial ({state.participants.length} Jugadores)
-            </button>
-          ) : (
-            <p className="text-center text-xs text-[#8d939e] py-2">
-              Se requieren al menos 2 jugadores para generar el bracket.
-            </p>
-          )}
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            {isEditingPlayers && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="sm:w-1/3 py-3.5 bg-[#141518] hover:bg-[#22242a] border border-[#282a32] hover:border-[#FF5500] text-white font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <ArrowLeft size={14} />
+                Cancelar (Volver al Bracket)
+              </button>
+            )}
+
+            {state.participants.length >= 2 ? (
+              <button
+                onClick={handleGenerate}
+                className={`py-3.5 bg-gradient-to-r from-[#FF5500] to-[#E04B00] text-white font-black uppercase tracking-wider rounded-lg hover:from-[#ff6b1a] hover:to-[#FF5500] transition-all shadow-xl shadow-[#FF5500]/25 cursor-pointer ${
+                  isEditingPlayers ? "flex-1" : "w-full"
+                }`}
+              >
+                {isEditingPlayers
+                  ? `Regenerar Bracket Oficial (${state.participants.length} Jugadores)`
+                  : `Generar Bracket Oficial (${state.participants.length} Jugadores)`}
+              </button>
+            ) : (
+              <p className="text-center text-xs text-[#8d939e] py-2 flex-1">
+                Se requieren al menos 2 jugadores para generar el bracket.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
       {/* Bracket Tree */}
-      {state.generated && (
+      {state.generated && !isEditingPlayers && (
         <BracketTree
           state={state}
           onSelectWinner={handleSelectWinner}

@@ -2,53 +2,28 @@
 
 import { useState } from "react";
 import {
-  Coins,
   RotateCcw,
   Ban,
   Trophy,
-  Swords,
   CheckCircle2,
-  Shield,
-  Crosshair,
-  Flame,
-  Zap,
-  Target,
-  Waves,
-  Snowflake,
 } from "lucide-react";
 import { CS_MAPS } from "@/lib/types";
+import {
+  RealisticCoin,
+  FlipCoin3D,
+  type CoinSide,
+} from "./RealisticCoin";
 
-type CoinSide = "cara" | "cruz";
 type VetoPhase = "setup" | "flipping" | "result" | "veto" | "done";
 
 interface MapState {
   name: string;
-  icon: string;
   label: string;
+  image: string;
+  mode: string;
   banned: boolean;
   bannedBy: string | null;
   order: number | null;
-}
-
-function getMapIcon(iconName: string) {
-  switch (iconName) {
-    case "crosshair":
-      return <Crosshair size={28} className="text-[#FF5500]" />;
-    case "snowflake":
-      return <Snowflake size={28} className="text-cyan-400" />;
-    case "flame":
-      return <Flame size={28} className="text-amber-500" />;
-    case "zap":
-      return <Zap size={28} className="text-yellow-400" />;
-    case "target":
-      return <Target size={28} className="text-red-400" />;
-    case "shield":
-      return <Shield size={28} className="text-emerald-400" />;
-    case "waves":
-      return <Waves size={28} className="text-blue-400" />;
-    default:
-      return <Crosshair size={28} className="text-[#FF5500]" />;
-  }
 }
 
 export default function MapVeto() {
@@ -60,6 +35,7 @@ export default function MapVeto() {
   const player2Choice: CoinSide = player1Choice === "cara" ? "cruz" : "cara";
 
   const [coinResult, setCoinResult] = useState<CoinSide | null>(null);
+  const [flipHistory, setFlipHistory] = useState<CoinSide[]>([]);
   const [winnerName, setWinnerName] = useState<string>("");
   const [firstBanner, setFirstBanner] = useState<string>("");
   const [currentTurn, setCurrentTurn] = useState<1 | 2>(1);
@@ -69,8 +45,9 @@ export default function MapVeto() {
   const [maps, setMaps] = useState<MapState[]>(() =>
     CS_MAPS.map((m) => ({
       name: m.name,
-      icon: m.icon,
       label: m.label,
+      image: m.image,
+      mode: m.mode,
       banned: false,
       bannedBy: null,
       order: null,
@@ -91,8 +68,9 @@ export default function MapVeto() {
     setMaps(
       CS_MAPS.map((m) => ({
         name: m.name,
-        icon: m.icon,
         label: m.label,
+        image: m.image,
+        mode: m.mode,
         banned: false,
         bannedBy: null,
         order: null,
@@ -109,9 +87,27 @@ export default function MapVeto() {
     setPhase("flipping");
     setCoinResult(null);
 
+    // Sistema de aleatoriedad criptográfica con protección contra rachas consecutivas
+    let result: CoinSide;
+    const history = flipHistory;
+
+    // Si salieron 2 resultados iguales consecutivos, forzamos alternancia para que nunca salgan 3 iguales
+    if (history.length >= 2 && history[history.length - 1] === history[history.length - 2]) {
+      result = history[history.length - 1] === "cara" ? "cruz" : "cara";
+    } else {
+      // Entropía de hardware mediante Web Crypto API
+      if (typeof window !== "undefined" && window.crypto && window.crypto.getRandomValues) {
+        const randomBuffer = new Uint32Array(1);
+        window.crypto.getRandomValues(randomBuffer);
+        result = randomBuffer[0] % 2 === 0 ? "cara" : "cruz";
+      } else {
+        result = Math.random() < 0.5 ? "cara" : "cruz";
+      }
+    }
+
     setTimeout(() => {
-      const result: CoinSide = Math.random() < 0.5 ? "cara" : "cruz";
       setCoinResult(result);
+      setFlipHistory((prev) => [...prev, result]);
 
       const winner = result === player1Choice ? player1.trim() : player2.trim();
       setWinnerName(winner);
@@ -179,7 +175,7 @@ export default function MapVeto() {
         </div>
         <button
           onClick={resetAll}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#8d939e] hover:text-white bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] rounded transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#8d939e] hover:text-white bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] rounded transition-all cursor-pointer"
         >
           <RotateCcw size={13} />
           Reiniciar
@@ -207,7 +203,7 @@ export default function MapVeto() {
                     Jugador 1
                   </span>
                   <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[#FF5500]/10 text-[#FF5500] border border-[#FF5500]/20 flex items-center gap-1.5">
-                    <span>{player1Choice === "cara" ? "🪙" : "✝️"}</span>
+                    <RealisticCoin side={player1Choice} size={15} showShadow={false} />
                     <span>{player1Choice === "cara" ? "CARA" : "CRUZ"}</span>
                   </span>
                 </div>
@@ -235,7 +231,7 @@ export default function MapVeto() {
                     Jugador 2
                   </span>
                   <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[#282a32] text-slate-300 flex items-center gap-1.5">
-                    <span>{player2Choice === "cara" ? "🪙" : "✝️"}</span>
+                    <RealisticCoin side={player2Choice} size={15} showShadow={false} />
                     <span>{player2Choice === "cara" ? "CARA" : "CRUZ"}</span>
                     <span className="text-[9px] text-[#8d939e] ml-0.5">(auto)</span>
                   </span>
@@ -257,7 +253,7 @@ export default function MapVeto() {
             <div className="bg-[#141518] border border-[#282a32] rounded-lg p-5 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#282a32] pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">🪙</span>
+                  <RealisticCoin side="cara" size={20} showShadow={false} />
                   <span className="text-xs font-bold uppercase tracking-wider text-white">
                     Elección de Sorteo
                   </span>
@@ -272,13 +268,15 @@ export default function MapVeto() {
                 <button
                   type="button"
                   onClick={() => setPlayer1Choice("cara")}
-                  className={`p-4 rounded-lg border text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
+                  className={`p-4 rounded-xl border text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
                     player1Choice === "cara"
                       ? "bg-[#FF5500]/15 border-[#FF5500] text-white shadow-lg shadow-[#FF5500]/15"
                       : "bg-[#1a1b1f] border-[#282a32] text-[#8d939e] hover:border-[#3e424e] hover:text-white"
                   }`}
                 >
-                  <div className="text-3xl mb-1.5 select-none">🪙</div>
+                  <div className="mb-2 transition-transform hover:scale-105">
+                    <RealisticCoin side="cara" size={54} />
+                  </div>
                   <div className="text-xs font-black uppercase tracking-wider">
                     CARA
                   </div>
@@ -290,13 +288,15 @@ export default function MapVeto() {
                 <button
                   type="button"
                   onClick={() => setPlayer1Choice("cruz")}
-                  className={`p-4 rounded-lg border text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
+                  className={`p-4 rounded-xl border text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
                     player1Choice === "cruz"
                       ? "bg-[#FF5500]/15 border-[#FF5500] text-white shadow-lg shadow-[#FF5500]/15"
                       : "bg-[#1a1b1f] border-[#282a32] text-[#8d939e] hover:border-[#3e424e] hover:text-white"
                   }`}
                 >
-                  <div className="text-3xl mb-1.5 select-none">✝️</div>
+                  <div className="mb-2 transition-transform hover:scale-105">
+                    <RealisticCoin side="cruz" size={54} />
+                  </div>
                   <div className="text-xs font-black uppercase tracking-wider">
                     CRUZ
                   </div>
@@ -310,9 +310,9 @@ export default function MapVeto() {
               <button
                 onClick={handleFlipCoin}
                 disabled={!canFlip}
-                className="w-full mt-2 py-3.5 bg-gradient-to-r from-[#FF5500] to-[#E04B00] text-white font-extrabold uppercase tracking-wider rounded-lg hover:from-[#ff6b1a] hover:to-[#FF5500] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-[#FF5500]/25 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full mt-2 py-3.5 bg-gradient-to-r from-[#FF5500] to-[#E04B00] text-white font-extrabold uppercase tracking-wider rounded-lg hover:from-[#ff6b1a] hover:to-[#FF5500] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-[#FF5500]/25 flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <span className="text-lg">🪙</span>
+                <RealisticCoin side="cara" size={18} showShadow={false} />
                 Lanzar Sorteo
               </button>
               {!canFlip && (
@@ -325,19 +325,16 @@ export default function MapVeto() {
 
           {/* FLIPPING IN PROGRESS */}
           {phase === "flipping" && (
-            <div className="text-center py-10 space-y-5 animate-fade-in-up">
-              <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-                {/* 3D Realistic Coin flipping */}
-                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#b45309] via-[#f59e0b] to-[#fef08a] border-4 border-[#78350f] shadow-[0_0_35px_rgba(245,158,11,0.6)] flex items-center justify-center text-5xl select-none coin-flip">
-                  🪙
-                </div>
+            <div className="text-center py-10 space-y-6 animate-fade-in-up">
+              <div className="relative w-32 h-32 mx-auto flex items-center justify-center">
+                <FlipCoin3D isFlipping={true} result={null} size={110} />
               </div>
               <div>
                 <p className="text-base font-black uppercase tracking-widest text-[#FF5500] animate-pulse">
-                  Lanzando Moneda...
+                  Lanzando Moneda al Aire...
                 </p>
                 <p className="text-xs text-[#8d939e] uppercase tracking-wider mt-1">
-                  Sorteando quién banea primero
+                  Sorteando quién banea primero de manera imparcial
                 </p>
               </div>
             </div>
@@ -346,10 +343,8 @@ export default function MapVeto() {
           {/* FLIP RESULT & BANNER */}
           {phase === "result" && coinResult && (
             <div className="text-center py-6 space-y-5 animate-fade-in-up">
-              <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#b45309] via-[#f59e0b] to-[#fef08a] border-4 border-[#78350f] shadow-[0_0_40px_rgba(245,158,11,0.7)] flex items-center justify-center text-5xl select-none">
-                  {coinResult === "cara" ? "🪙" : "✝️"}
-                </div>
+              <div className="relative w-32 h-32 mx-auto flex items-center justify-center">
+                <FlipCoin3D isFlipping={false} result={coinResult} size={115} />
               </div>
               <div>
                 <p className="text-xs uppercase tracking-widest text-[#8d939e]">
@@ -358,12 +353,16 @@ export default function MapVeto() {
                 <h3 className="text-3xl font-black uppercase tracking-wider text-white mt-1">
                   ¡SALIÓ {coinResult.toUpperCase()}!
                 </h3>
-                <p className="text-sm text-slate-300 mt-2">
+                <p className="text-sm text-slate-300 mt-2 flex items-center justify-center gap-2">
                   <strong className="text-[#FF5500] font-extrabold text-base">
                     {winnerName}
                   </strong>{" "}
-                  eligió {coinResult === "cara" ? "🪙 Cara" : "✝️ Cruz"} y{" "}
-                  <strong className="text-white">banea primero</strong>.
+                  eligió{" "}
+                  <span className="inline-flex items-center gap-1.5 font-bold text-white bg-[#141518] px-2 py-0.5 rounded border border-[#282a32]">
+                    <RealisticCoin side={coinResult} size={16} showShadow={false} />
+                    {coinResult === "cara" ? "Cara" : "Cruz"}
+                  </span>{" "}
+                  y <strong className="text-white">banea primero</strong>.
                 </p>
               </div>
 
@@ -422,47 +421,75 @@ export default function MapVeto() {
                 key={map.name}
                 disabled={map.banned}
                 onClick={() => handleBanMap(map.name)}
-                className={`relative group rounded-xl border p-5 text-left transition-all ${
+                className={`relative group rounded-xl border overflow-hidden text-left transition-all ${
                   map.banned
-                    ? "bg-[#141518]/60 border-[#282a32]/40 opacity-40 cursor-not-allowed"
+                    ? "bg-[#141518]/70 border-[#282a32]/40 opacity-45 cursor-not-allowed"
                     : "bg-[#1a1b1f] border-[#282a32] hover:border-[#FF5500] hover:shadow-faceit-orange cursor-pointer hover:-translate-y-0.5"
                 }`}
               >
-                {/* Banned icon overlay */}
-                {map.banned && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <Ban className="w-16 h-16 text-red-500/30" />
-                  </div>
-                )}
+                {/* Map preview thumbnail */}
+                <div className="relative w-full h-28 overflow-hidden bg-[#141518]">
+                  <img
+                    src={map.image}
+                    alt={map.name}
+                    className={`w-full h-full object-cover transition-transform duration-300 ${
+                      map.banned
+                        ? "grayscale brightness-40"
+                        : "group-hover:scale-105"
+                    }`}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a1b1f] via-transparent to-black/40 pointer-events-none" />
 
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-[#141518] border border-[#282a32] flex items-center justify-center">
-                    {getMapIcon(map.icon)}
-                  </div>
-                  {!map.banned ? (
-                    <span className="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-widest bg-[#FF5500] text-white rounded transition-opacity">
-                      BAN
-                    </span>
-                  ) : (
-                    <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase bg-red-950/40 text-red-400 border border-red-500/30 rounded">
-                      #{map.order}
-                    </span>
+                  {/* Banned icon overlay */}
+                  {map.banned && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px] pointer-events-none">
+                      <Ban className="w-12 h-12 text-red-500/80 drop-shadow-md" />
+                    </div>
                   )}
+
+                  {/* Top status badge (BAN or Order, no emojis) */}
+                  <div className="absolute top-2 right-2 pointer-events-none">
+                    {!map.banned ? (
+                      <span className="opacity-0 group-hover:opacity-100 px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest bg-[#FF5500] text-white rounded transition-opacity shadow-md">
+                        BAN
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase bg-red-950/90 text-red-300 border border-red-500/40 rounded backdrop-blur-sm">
+                        #{map.order}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <p
-                  className={`text-sm font-extrabold tracking-wide ${
-                    map.banned ? "line-through text-slate-500" : "text-white"
-                  }`}
-                >
-                  {map.name}
-                </p>
-
-                {map.banned && map.bannedBy && (
-                  <p className="text-[10px] text-red-400/80 mt-1 font-semibold truncate">
-                    Baneado por {map.bannedBy}
+                {/* Map info bar */}
+                <div className="p-3 bg-[#1a1b1f]">
+                  <p
+                    className={`text-sm font-black tracking-wide uppercase truncate ${
+                      map.banned ? "line-through text-slate-500" : "text-white"
+                    }`}
+                  >
+                    {map.name}
                   </p>
-                )}
+
+                  {/* Aclaración de armas debajo del nombre del mapa */}
+                  <div className="flex items-center justify-between gap-1 mt-0.5">
+                    <span
+                      className={`text-[11px] font-bold tracking-wide uppercase ${
+                        map.banned
+                          ? "text-slate-500 line-through"
+                          : "text-[#FF5500]"
+                      }`}
+                    >
+                      {map.mode}
+                    </span>
+
+                    {map.banned && map.bannedBy && (
+                      <span className="text-[10px] text-red-400 font-semibold truncate">
+                        Ban: {map.bannedBy}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </button>
             ))}
           </div>
@@ -470,27 +497,47 @@ export default function MapVeto() {
       )}
 
       {/* PHASE 4: DECIDED MAP */}
-      {phase === "done" && selectedMap && (
-        <div className="animate-fade-in-up space-y-6">
-          <div className="relative overflow-hidden bg-gradient-to-br from-[#1a1b1f] via-[#141518] to-[#1a1b1f] border-2 border-[#FF5500] rounded-2xl p-8 text-center shadow-faceit-orange">
-            <div className="shimmer absolute inset-0 pointer-events-none" />
-            <div className="w-14 h-14 bg-[#FF5500]/20 border border-[#FF5500]/50 rounded-full flex items-center justify-center mx-auto mb-3 text-[#FF5500]">
-              <Trophy size={28} />
-            </div>
+      {phase === "done" && selectedMap && (() => {
+        const winningMap = maps.find((m) => m.name === selectedMap);
+        return (
+          <div className="animate-fade-in-up space-y-6">
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#1a1b1f] via-[#141518] to-[#1a1b1f] border-2 border-[#FF5500] rounded-2xl p-8 sm:p-10 text-center shadow-faceit-orange">
+              {/* Imagen de fondo del mapa con iluminación viva (más visible y reconocible) */}
+              {winningMap?.image && (
+                <img
+                  src={winningMap.image}
+                  alt={selectedMap}
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none filter brightness-[0.78] contrast-105 scale-105"
+                />
+              )}
+              {/* Overlay viñeta suave: protege el contraste de textos dejando brillar el mapa */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#141518]/85 via-black/25 to-[#141518]/35 pointer-events-none" />
+              <div className="shimmer absolute inset-0 pointer-events-none" />
 
-            <p className="text-xs uppercase tracking-[0.25em] text-[#FF5500] font-extrabold mb-1">
-              Mapa Final Seleccionado
-            </p>
-            <div className="w-16 h-16 rounded-xl bg-[#141518] border border-[#282a32] flex items-center justify-center mx-auto my-3">
-              {getMapIcon(maps.find((m) => m.name === selectedMap)?.icon || "crosshair")}
+              {/* Contenido limpio del cartel con sombras reforzadas */}
+              <div className="relative z-10">
+                <div className="w-14 h-14 bg-[#141518]/80 backdrop-blur-sm border-2 border-[#FF5500] rounded-full flex items-center justify-center mx-auto mb-3 text-[#FF5500] shadow-xl">
+                  <Trophy size={28} className="filter drop-shadow-[0_0_8px_rgba(255,85,0,0.7)]" />
+                </div>
+
+                <p className="text-xs uppercase tracking-[0.25em] text-[#FF5500] font-extrabold mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                  Mapa Final Seleccionado
+                </p>
+                <h3 className="text-4xl sm:text-5xl font-black text-white tracking-wider uppercase mb-1 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)]">
+                  {selectedMap}
+                </h3>
+                {winningMap?.mode && (
+                  <div className="mb-3">
+                    <span className="inline-block px-3 py-0.5 rounded bg-[#141518]/80 border border-[#FF5500]/50 text-[#FF5500] text-xs font-black uppercase tracking-widest backdrop-blur-md shadow-md">
+                      {winningMap.mode}
+                    </span>
+                  </div>
+                )}
+                <p className="text-sm font-bold text-white uppercase tracking-wider drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+                  {p1Clean} <span className="text-[#FF5500]">VS</span> {p2Clean}
+                </p>
+              </div>
             </div>
-            <h3 className="text-4xl font-black text-white tracking-wider uppercase mb-2">
-              {selectedMap}
-            </h3>
-            <p className="text-sm font-bold text-[#8d939e] uppercase tracking-wider">
-              {p1Clean} <span className="text-[#FF5500]">VS</span> {p2Clean}
-            </p>
-          </div>
 
           {/* Ban history log */}
           <div className="bg-[#1a1b1f] border border-[#282a32] rounded-xl p-5">
@@ -539,7 +586,8 @@ export default function MapVeto() {
             Configurar Nuevo Duelo / Revancha
           </button>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

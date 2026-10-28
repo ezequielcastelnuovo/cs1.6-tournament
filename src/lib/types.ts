@@ -16,6 +16,7 @@ export interface TournamentState {
   rounds: number;
   generated: boolean;
   champion: string | null;
+  leaderboard?: Record<string, { kills: number; deaths: number }>;
 }
 
 export const INITIAL_STATE: TournamentState = {
@@ -24,6 +25,7 @@ export const INITIAL_STATE: TournamentState = {
   rounds: 0,
   generated: false,
   champion: null,
+  leaderboard: {},
 };
 
 // Generates a tournament bracket with 100% real matches
@@ -31,7 +33,10 @@ export const INITIAL_STATE: TournamentState = {
 // If the participant count in Round 0 is odd, the 1 odd participant sits at the BOTTOM
 // of Round 0 with an explicit "Avanza por falta de rival" card and connects directly to their next match.
 // If in later rounds a competitor has no rival in that round, they advance directly to the next round without dummy cards.
-export function generateBracket(participants: string[]): TournamentState {
+export function generateBracket(
+  participants: string[],
+  existingLeaderboard?: Record<string, { kills: number; deaths: number }>
+): TournamentState {
   const n = participants.length;
   if (n < 2) {
     return { ...INITIAL_STATE, participants };
@@ -146,6 +151,7 @@ export function generateBracket(participants: string[]): TournamentState {
     rounds: roundIdx,
     generated: true,
     champion: null,
+    leaderboard: existingLeaderboard || {},
   };
 }
 
@@ -207,13 +213,14 @@ export function undoMatch(
   return { ...state, matches, champion };
 }
 
-// Clean CS maps with icon identifiers (NO EMOJIS)
+// Clean CS maps with icon identifiers, preview images, and weapon mode rules
 export const CS_MAPS = [
-  { name: "aim_map", icon: "crosshair", label: "AIM" },
-  { name: "fy_iceworld2k", icon: "snowflake", label: "ICE" },
-  { name: "35hp_lava", icon: "flame", label: "LAVA" },
-  { name: "aim_ak-colt", icon: "zap", label: "RIFLE" },
-  { name: "aim_headshot", icon: "target", label: "HEADSHOT" },
-  { name: "awp_india", icon: "shield", label: "SNIPER" },
-  { name: "fy_pool_day", icon: "waves", label: "POOL" },
+  { name: "aim_map", icon: "crosshair", label: "AIM", image: "/maps/aim_map.jpg", mode: "only rifle" },
+  { name: "fy_iceworld2k", icon: "snowflake", label: "ICE", image: "/maps/fy_iceworld2k.jpg", mode: "all guns" },
+  { name: "35hp_lava", icon: "flame", label: "LAVA", image: "/maps/35hp_lava.jpg", mode: "only knife" },
+  { name: "aim_ak-colt", icon: "zap", label: "RIFLE", image: "/maps/aim_ak-colt.jpg", mode: "only rifle" },
+  { name: "aim_headshot", icon: "target", label: "HEADSHOT", image: "/maps/aim_headshot.jpg", mode: "only rifle" },
+  { name: "awp_india", icon: "shield", label: "SNIPER", image: "/maps/awp_india.jpg", mode: "only awp" },
+  { name: "fy_pool_day", icon: "waves", label: "POOL", image: "/maps/fy_pool_day.jpg", mode: "all guns" },
 ] as const;
+

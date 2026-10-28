@@ -227,7 +227,7 @@ export default function ChampionCelebration({
           {/* Top badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FF5500]/15 border border-[#FF5500]/40 text-[#FF5500] text-[10px] font-black uppercase tracking-widest mb-6 shadow-sm">
             <Sparkles size={13} />
-            <span>UADE CS 1.6 · 1V1 LAN ARENA</span>
+            <span>UADE CS 1.6 · 1V1 LAN EDITION</span>
           </div>
 
           {/* Trophy emblem (pure vector SVG, no emojis) */}
