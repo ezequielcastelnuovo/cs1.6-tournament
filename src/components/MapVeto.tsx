@@ -206,9 +206,9 @@ export default function MapVeto() {
                   <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#FF5500]">
                     Jugador 1
                   </span>
-                  <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[#FF5500]/10 text-[#FF5500] border border-[#FF5500]/20 flex items-center gap-1">
-                    {player1Choice === "cara" ? <Coins size={12} /> : <Shield size={12} />}
-                    {player1Choice === "cara" ? "CARA" : "CRUZ"}
+                  <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[#FF5500]/10 text-[#FF5500] border border-[#FF5500]/20 flex items-center gap-1.5">
+                    <span>{player1Choice === "cara" ? "🪙" : "✝️"}</span>
+                    <span>{player1Choice === "cara" ? "CARA" : "CRUZ"}</span>
                   </span>
                 </div>
                 <input
@@ -234,9 +234,9 @@ export default function MapVeto() {
                   <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8d939e]">
                     Jugador 2
                   </span>
-                  <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[#282a32] text-slate-300 flex items-center gap-1">
-                    {player2Choice === "cara" ? <Coins size={12} /> : <Shield size={12} />}
-                    {player2Choice === "cara" ? "CARA" : "CRUZ"}
+                  <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-[#282a32] text-slate-300 flex items-center gap-1.5">
+                    <span>{player2Choice === "cara" ? "🪙" : "✝️"}</span>
+                    <span>{player2Choice === "cara" ? "CARA" : "CRUZ"}</span>
                     <span className="text-[9px] text-[#8d939e] ml-0.5">(auto)</span>
                   </span>
                 </div>
@@ -257,7 +257,7 @@ export default function MapVeto() {
             <div className="bg-[#141518] border border-[#282a32] rounded-lg p-5 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#282a32] pb-3">
                 <div className="flex items-center gap-2">
-                  <Coins className="text-[#FF5500]" size={18} />
+                  <span className="text-lg">🪙</span>
                   <span className="text-xs font-bold uppercase tracking-wider text-white">
                     Elección de Sorteo
                   </span>
@@ -272,13 +272,13 @@ export default function MapVeto() {
                 <button
                   type="button"
                   onClick={() => setPlayer1Choice("cara")}
-                  className={`p-4 rounded-lg border text-center transition-all flex flex-col items-center justify-center ${
+                  className={`p-4 rounded-lg border text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
                     player1Choice === "cara"
                       ? "bg-[#FF5500]/15 border-[#FF5500] text-white shadow-lg shadow-[#FF5500]/15"
                       : "bg-[#1a1b1f] border-[#282a32] text-[#8d939e] hover:border-[#3e424e] hover:text-white"
                   }`}
                 >
-                  <Coins size={28} className={player1Choice === "cara" ? "text-[#FF5500] mb-2" : "text-[#8d939e] mb-2"} />
+                  <div className="text-3xl mb-1.5 select-none">🪙</div>
                   <div className="text-xs font-black uppercase tracking-wider">
                     CARA
                   </div>
@@ -290,13 +290,13 @@ export default function MapVeto() {
                 <button
                   type="button"
                   onClick={() => setPlayer1Choice("cruz")}
-                  className={`p-4 rounded-lg border text-center transition-all flex flex-col items-center justify-center ${
+                  className={`p-4 rounded-lg border text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
                     player1Choice === "cruz"
                       ? "bg-[#FF5500]/15 border-[#FF5500] text-white shadow-lg shadow-[#FF5500]/15"
                       : "bg-[#1a1b1f] border-[#282a32] text-[#8d939e] hover:border-[#3e424e] hover:text-white"
                   }`}
                 >
-                  <Shield size={28} className={player1Choice === "cruz" ? "text-[#FF5500] mb-2" : "text-[#8d939e] mb-2"} />
+                  <div className="text-3xl mb-1.5 select-none">✝️</div>
                   <div className="text-xs font-black uppercase tracking-wider">
                     CRUZ
                   </div>
@@ -310,9 +310,9 @@ export default function MapVeto() {
               <button
                 onClick={handleFlipCoin}
                 disabled={!canFlip}
-                className="w-full mt-2 py-3.5 bg-gradient-to-r from-[#FF5500] to-[#E04B00] text-white font-extrabold uppercase tracking-wider rounded-lg hover:from-[#ff6b1a] hover:to-[#FF5500] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-[#FF5500]/25 flex items-center justify-center gap-2"
+                className="w-full mt-2 py-3.5 bg-gradient-to-r from-[#FF5500] to-[#E04B00] text-white font-extrabold uppercase tracking-wider rounded-lg hover:from-[#ff6b1a] hover:to-[#FF5500] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-[#FF5500]/25 flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Coins size={18} />
+                <span className="text-lg">🪙</span>
                 Lanzar Sorteo
               </button>
               {!canFlip && (
@@ -325,41 +325,52 @@ export default function MapVeto() {
 
           {/* FLIPPING IN PROGRESS */}
           {phase === "flipping" && (
-            <div className="text-center py-8 space-y-4 animate-fade-in-up">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#141518] border-2 border-[#FF5500] text-[#FF5500] shadow-faceit-orange coin-flip">
-                <Coins size={40} />
+            <div className="text-center py-10 space-y-5 animate-fade-in-up">
+              <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                {/* 3D Realistic Coin flipping */}
+                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#b45309] via-[#f59e0b] to-[#fef08a] border-4 border-[#78350f] shadow-[0_0_35px_rgba(245,158,11,0.6)] flex items-center justify-center text-5xl select-none coin-flip">
+                  🪙
+                </div>
               </div>
-              <p className="text-sm font-bold uppercase tracking-widest text-[#FF5500] animate-pulse">
-                Sorteando inicio de baneo...
-              </p>
+              <div>
+                <p className="text-base font-black uppercase tracking-widest text-[#FF5500] animate-pulse">
+                  Lanzando Moneda...
+                </p>
+                <p className="text-xs text-[#8d939e] uppercase tracking-wider mt-1">
+                  Sorteando quién banea primero
+                </p>
+              </div>
             </div>
           )}
 
           {/* FLIP RESULT & BANNER */}
           {phase === "result" && coinResult && (
-            <div className="text-center py-4 space-y-4 animate-fade-in-up">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#141518] border-2 border-[#FF5500] shadow-faceit-orange text-[#FF5500] mb-1">
-                {coinResult === "cara" ? <Coins size={38} /> : <Shield size={38} />}
+            <div className="text-center py-6 space-y-5 animate-fade-in-up">
+              <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#b45309] via-[#f59e0b] to-[#fef08a] border-4 border-[#78350f] shadow-[0_0_40px_rgba(245,158,11,0.7)] flex items-center justify-center text-5xl select-none">
+                  {coinResult === "cara" ? "🪙" : "✝️"}
+                </div>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-widest text-[#8d939e]">
                   Resultado del Sorteo
                 </p>
-                <h3 className="text-2xl font-black uppercase tracking-wider text-white">
+                <h3 className="text-3xl font-black uppercase tracking-wider text-white mt-1">
                   ¡SALIÓ {coinResult.toUpperCase()}!
                 </h3>
                 <p className="text-sm text-slate-300 mt-2">
                   <strong className="text-[#FF5500] font-extrabold text-base">
                     {winnerName}
                   </strong>{" "}
-                  acertó el sorteo y <strong className="text-white">banea primero</strong>.
+                  eligió {coinResult === "cara" ? "🪙 Cara" : "✝️ Cruz"} y{" "}
+                  <strong className="text-white">banea primero</strong>.
                 </p>
               </div>
 
               <div className="pt-2">
                 <button
                   onClick={startVeto}
-                  className="px-8 py-3.5 bg-gradient-to-r from-[#FF5500] to-[#E04B00] text-white font-black uppercase tracking-wider rounded-lg hover:from-[#ff6b1a] hover:to-[#FF5500] transition-all shadow-xl shadow-[#FF5500]/30 inline-flex items-center gap-2"
+                  className="px-8 py-3.5 bg-gradient-to-r from-[#FF5500] to-[#E04B00] text-white font-black uppercase tracking-wider rounded-lg hover:from-[#ff6b1a] hover:to-[#FF5500] transition-all shadow-xl shadow-[#FF5500]/30 inline-flex items-center gap-2 cursor-pointer"
                 >
                   <Ban size={16} />
                   Comenzar Veto de Mapas →
