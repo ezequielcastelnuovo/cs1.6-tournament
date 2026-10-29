@@ -143,20 +143,70 @@ export async function getAllSessions(): Promise<Record<string, UserSession>> {
   }
 }
 
+const AUTH_SECRET = process.env.AUTH_SECRET || "uade_cs16_secret_key_fixed_2026_tourn";
+
+export async function signStatelessToken(data: unknown): Promise<string> {
+  const json = JSON.stringify(data);
+  const payloadB64 = Buffer.from(json).toString("base64url");
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(AUTH_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(payloadB64));
+  const sigB64 = Buffer.from(sig).toString("base64url");
+  return `${payloadB64}.${sigB64}`;
+}
+
+export async function verifyStatelessToken(token: string): Promise<{ user: UserSession["user"]; expiresAt?: number } | null> {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 2) return null;
+    const [payloadB64, sigB64] = parts;
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      enc.encode(AUTH_SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+    const sigBytes = Buffer.from(sigB64, "base64url");
+    const valid = await crypto.subtle.verify("HMAC", key, sigBytes, enc.encode(payloadB64));
+    if (!valid) return null;
+    const json = Buffer.from(payloadB64, "base64url").toString("utf-8");
+    const data = JSON.parse(json);
+    if (data.expiresAt && Date.now() > data.expiresAt) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 export async function createSession(user: UserAccount): Promise<UserSession> {
-  const token = generateToken();
+  const sessionUser = {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    role: user.role,
+    avatarColor: user.avatarColor,
+    createdAt: user.createdAt,
+  };
+  const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
+
+  // Genera token firmado autosuficiente que sobrevive reinicios y redeploys
+  const token = await signStatelessToken({
+    user: sessionUser,
+    expiresAt,
+  });
+
   const session: UserSession = {
     token,
-    user: {
-      id: user.id,
-      username: user.username,
-      displayName: user.displayName,
-      role: user.role,
-      avatarColor: user.avatarColor,
-      createdAt: user.createdAt,
-    },
-    // 30 days expiration
-    expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+    user: sessionUser,
+    expiresAt,
   };
 
   const sessions = await getAllSessions();
@@ -177,6 +227,20 @@ export async function createSession(user: UserAccount): Promise<UserSession> {
 
 export async function getSession(token: string): Promise<UserSession | null> {
   if (!token) return null;
+
+  // 1. Verificación sin estado mediante firma HMAC (100% inmune a cold starts de Vercel)
+  if (token.includes(".")) {
+    const verified = await verifyStatelessToken(token);
+    if (verified && verified.user) {
+      return {
+        token,
+        user: verified.user,
+        expiresAt: verified.expiresAt || (Date.now() + 30 * 24 * 60 * 60 * 1000),
+      };
+    }
+  }
+
+  // 2. Respaldo para tokens tradicionales
   const sessions = await getAllSessions();
   const session = sessions[token];
   if (!session) return null;

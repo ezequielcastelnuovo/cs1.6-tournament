@@ -67,19 +67,60 @@ export default function BracketGenerator() {
       }
 
       const data: TournamentState = await res.json();
-      setState(data);
+      if (data && data.generated) {
+        setState(data);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(
+              `cs16-tournament-bracket-${user?.id || "guest"}`,
+              JSON.stringify(data)
+            );
+          } catch (e) {}
+        }
+      } else {
+        // Respaldo resiliente: si el servidor se reinició, recuperar del almacenamiento local
+        let localRestored = false;
+        if (typeof window !== "undefined") {
+          try {
+            const raw = localStorage.getItem(
+              `cs16-tournament-bracket-${user?.id || "guest"}`
+            );
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed && parsed.generated) {
+                setState(parsed);
+                localRestored = true;
+                // Re-sincronizar con el servidor
+                saveState(parsed);
+              }
+            }
+          } catch (e) {}
+        }
+        if (!localRestored) setState(data || INITIAL_STATE);
+      }
       setError(null);
     } catch (err) {
       console.warn("Fetch fallback:", err);
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, user?.id]);
 
   // Save state scoped to the logged-in user
   const saveState = useCallback(
     async (newState: TournamentState) => {
       setState(newState);
+
+      // Respaldo local instantáneo e indestructible
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(
+            `cs16-tournament-bracket-${user?.id || "guest"}`,
+            JSON.stringify(newState)
+          );
+        } catch (e) {}
+      }
+
       if (!token) return;
 
       setSaving(true);

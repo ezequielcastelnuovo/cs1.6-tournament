@@ -92,6 +92,15 @@ export async function POST(request: NextRequest) {
       success: true,
       user: session.user,
       token: session.token,
+      accountBackup: {
+        id: newUser.id,
+        username: newUser.username,
+        displayName: newUser.displayName,
+        passwordHash: newUser.passwordHash,
+        avatarColor: newUser.avatarColor,
+        role: newUser.role,
+        createdAt: newUser.createdAt,
+      },
     });
 
     response.cookies.set("cs16_session", session.token, {

@@ -28,6 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_USER_KEY = "cs16_user_account";
 const LOCAL_STORAGE_TOKEN_KEY = "cs16_session_token";
+const LOCAL_STORAGE_VAULT_PREFIX = "cs16_vault_";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserPublicProfile | null>(() => {
@@ -78,8 +79,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function verifySession() {
       try {
         const savedToken = localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY);
+        if (!savedToken) return;
+
         const res = await fetch("/api/auth/me", {
-          headers: savedToken ? { Authorization: `Bearer ${savedToken}` } : {},
+          headers: { Authorization: `Bearer ${savedToken}` },
           cache: "no-store",
         });
 
@@ -92,12 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (data.token) {
               localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, data.token);
             }
-          } else {
-            // Server revoked session
-            setUser(null);
-            setToken(null);
-            localStorage.removeItem(LOCAL_STORAGE_USER_KEY);
-            localStorage.removeItem(LOCAL_STORAGE_TOKEN_KEY);
           }
         }
       } catch (err) {
@@ -127,10 +124,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (username: string, password: string) => {
     try {
+      let backupAccount = null;
+      try {
+        const rawVault = localStorage.getItem(LOCAL_STORAGE_VAULT_PREFIX + username.trim().toLowerCase());
+        if (rawVault) backupAccount = JSON.parse(rawVault);
+      } catch (e) {
+        console.warn("Vault read error:", e);
+      }
+
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, backupAccount }),
       });
 
       const data = await res.json();
@@ -142,10 +147,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(data.token);
       localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(data.user));
       localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, data.token);
+      if (data.accountBackup) {
+        localStorage.setItem(
+          LOCAL_STORAGE_VAULT_PREFIX + data.user.username.toLowerCase(),
+          JSON.stringify(data.accountBackup)
+        );
+      }
       setIsAuthModalOpen(false);
       return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err.message || "Error de conexión" };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error de conexión";
+      return { success: false, error: msg };
     }
   };
 
@@ -171,10 +183,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(data.token);
       localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(data.user));
       localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, data.token);
+      if (data.accountBackup) {
+        localStorage.setItem(
+          LOCAL_STORAGE_VAULT_PREFIX + data.user.username.toLowerCase(),
+          JSON.stringify(data.accountBackup)
+        );
+      }
       setIsAuthModalOpen(false);
       return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err.message || "Error de conexión" };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error de conexión";
+      return { success: false, error: msg };
     }
   };
 
