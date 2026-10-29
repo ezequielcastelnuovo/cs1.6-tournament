@@ -38,13 +38,19 @@ export default function MatchDetailModal({
   const player2 = match.player2 || "Por definir";
   const hasBothPlayers = match.player1 !== null && match.player2 !== null;
 
-  // Initial score state from match or defaults
-  const [p1Kills, setP1Kills] = useState<number>(
-    match.score?.player1Kills ?? (match.winner === match.player1 ? 16 : 0)
-  );
-  const [p2Kills, setP2Kills] = useState<number>(
-    match.score?.player2Kills ?? (match.winner === match.player2 ? 16 : 0)
-  );
+  // Initial score state from match: empty string when unplayed so it never starts with "0"
+  const [p1Kills, setP1Kills] = useState<string>(() => {
+    if (match.score?.player1Kills !== undefined && match.score.player1Kills !== null) {
+      return String(match.score.player1Kills);
+    }
+    return "";
+  });
+  const [p2Kills, setP2Kills] = useState<string>(() => {
+    if (match.score?.player2Kills !== undefined && match.score.player2Kills !== null) {
+      return String(match.score.player2Kills);
+    }
+    return "";
+  });
   const [selectedWinner, setSelectedWinner] = useState<string | null>(
     match.winner || null
   );
@@ -53,43 +59,74 @@ export default function MatchDetailModal({
     ? CS_MAPS.find((m) => m.name === match.selectedMap)
     : null;
 
+  const handleP1Change = (raw: string) => {
+    let clean = raw.replace(/\D/g, "");
+    if (clean.length > 1 && clean.startsWith("0")) {
+      clean = clean.replace(/^0+/, "") || "0";
+    }
+    setP1Kills(clean);
+    const k1 = clean === "" ? 0 : parseInt(clean, 10);
+    const k2 = p2Kills === "" ? 0 : parseInt(p2Kills, 10);
+    if (clean !== "" && (p2Kills !== "" || k1 > k2)) {
+      if (k1 > k2) setSelectedWinner(match.player1);
+      else if (k2 > k1) setSelectedWinner(match.player2);
+    }
+  };
+
+  const handleP2Change = (raw: string) => {
+    let clean = raw.replace(/\D/g, "");
+    if (clean.length > 1 && clean.startsWith("0")) {
+      clean = clean.replace(/^0+/, "") || "0";
+    }
+    setP2Kills(clean);
+    const k1 = p1Kills === "" ? 0 : parseInt(p1Kills, 10);
+    const k2 = clean === "" ? 0 : parseInt(clean, 10);
+    if (clean !== "" && (p1Kills !== "" || k2 > k1)) {
+      if (k1 > k2) setSelectedWinner(match.player1);
+      else if (k2 > k1) setSelectedWinner(match.player2);
+    }
+  };
+
   const handleScoreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hasBothPlayers) return;
 
+    const num1 = p1Kills === "" ? 0 : parseInt(p1Kills, 10);
+    const num2 = p2Kills === "" ? 0 : parseInt(p2Kills, 10);
+
     let winner = selectedWinner;
     if (!winner) {
-      if (p1Kills > p2Kills) winner = match.player1;
-      else if (p2Kills > p1Kills) winner = match.player2;
+      if (num1 > num2) winner = match.player1;
+      else if (num2 > num1) winner = match.player2;
       else winner = match.player1; // Tiebreaker default
     }
 
-    onSaveScore(match.id, p1Kills, p2Kills, winner || undefined);
+    onSaveScore(match.id, num1, num2, winner || undefined);
     onClose();
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in-up"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in-up"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-xl bg-[#141518] border border-[#282a32] rounded-2xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-xl max-h-[92vh] flex flex-col bg-[#141518] border border-[#282a32] rounded-2xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Accent */}
-        <div className="h-1 w-full bg-gradient-to-r from-[#FF5500] via-[#ff7a33] to-[#FF5500]" />
+        <div className="h-1 w-full bg-gradient-to-r from-[#FF5500] via-[#ff7a33] to-[#FF5500] shrink-0" />
 
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-lg text-[#8d939e] hover:text-white bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] transition-colors cursor-pointer"
+          className="absolute top-4 right-4 z-10 p-2 rounded-lg text-[#8d939e] hover:text-white bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] transition-colors cursor-pointer"
           title="Cerrar"
         >
           <X size={16} />
         </button>
 
-        <div className="p-6 sm:p-8 space-y-6">
+        <div className="p-4 sm:p-7 space-y-5 overflow-y-auto">
           {/* Header Title */}
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-2.5 bg-[#FF5500] rounded-sm"></span>
@@ -233,50 +270,44 @@ export default function MatchDetailModal({
 
               <div className="grid grid-cols-2 gap-3">
                 {/* Player 1 Score */}
-                <div className="bg-[#141518] border border-[#282a32] focus-within:border-[#FF5500] rounded-xl p-3.5">
+                <div className="bg-[#141518] border border-[#282a32] focus-within:border-[#FF5500] rounded-xl p-3 sm:p-3.5 transition-colors">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-[#8d939e] block mb-1 truncate">
                     Kills de {player1}
                   </label>
                   <input
-                    type="number"
-                    min="0"
-                    max="999"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={p1Kills}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value) || 0;
-                      setP1Kills(val);
-                      if (val > p2Kills) setSelectedWinner(match.player1);
-                      else if (p2Kills > val) setSelectedWinner(match.player2);
-                    }}
-                    className="w-full bg-transparent text-2xl font-black text-white focus:outline-none"
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => handleP1Change(e.target.value)}
+                    className="w-full bg-transparent text-2xl sm:text-3xl font-black text-white placeholder:text-[#383b46] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     placeholder="0"
+                    autoComplete="off"
                   />
                   <div className="text-[10px] text-[#8d939e] mt-1">
-                    Muertes: <strong className="text-slate-300">{p2Kills}</strong>
+                    Muertes: <strong className="text-slate-300">{p2Kills !== "" ? p2Kills : "0"}</strong>
                   </div>
                 </div>
 
                 {/* Player 2 Score */}
-                <div className="bg-[#141518] border border-[#282a32] focus-within:border-[#FF5500] rounded-xl p-3.5">
+                <div className="bg-[#141518] border border-[#282a32] focus-within:border-[#FF5500] rounded-xl p-3 sm:p-3.5 transition-colors">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-[#8d939e] block mb-1 truncate">
                     Kills de {player2}
                   </label>
                   <input
-                    type="number"
-                    min="0"
-                    max="999"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={p2Kills}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value) || 0;
-                      setP2Kills(val);
-                      if (p1Kills > val) setSelectedWinner(match.player1);
-                      else if (val > p1Kills) setSelectedWinner(match.player2);
-                    }}
-                    className="w-full bg-transparent text-2xl font-black text-white focus:outline-none"
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => handleP2Change(e.target.value)}
+                    className="w-full bg-transparent text-2xl sm:text-3xl font-black text-white placeholder:text-[#383b46] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     placeholder="0"
+                    autoComplete="off"
                   />
                   <div className="text-[10px] text-[#8d939e] mt-1">
-                    Muertes: <strong className="text-slate-300">{p1Kills}</strong>
+                    Muertes: <strong className="text-slate-300">{p1Kills !== "" ? p1Kills : "0"}</strong>
                   </div>
                 </div>
               </div>
@@ -342,3 +373,4 @@ export default function MatchDetailModal({
     </div>
   );
 }
+

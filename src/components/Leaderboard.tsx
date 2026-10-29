@@ -549,8 +549,8 @@ export default function Leaderboard() {
 
       {/* TABLA PRINCIPAL DE STATS */}
       <div className="bg-[#1a1b1f] border border-[#282a32] rounded-xl overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto overscroll-x-contain">
+          <table className="w-full min-w-[520px] text-left border-collapse">
             <thead>
               <tr className="border-b border-[#282a32] bg-[#141518]/90 text-[10px] font-black uppercase tracking-widest text-[#8d939e]">
                 <th className="py-3 px-4 w-16 text-center"># Pos</th>

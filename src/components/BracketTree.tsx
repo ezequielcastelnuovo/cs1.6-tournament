@@ -112,15 +112,27 @@ export default function BracketTree({
   }, [state.matches, positions]);
 
   return (
-    <div className="bg-[#1a1b1f] border border-[#282a32] rounded-2xl p-6 sm:p-8 overflow-x-auto shadow-2xl">
-      <div
-        className="relative"
-        style={{
-          width: `${totalWidth}px`,
-          height: `${totalHeight}px`,
-          minHeight: "450px",
-        }}
-      >
+    <div className="bg-[#1a1b1f] border border-[#282a32] rounded-2xl p-3 sm:p-6 lg:p-8 shadow-2xl">
+      {/* Scroll hint on smaller screens */}
+      <div className="lg:hidden flex items-center justify-between pb-3 px-1 text-[10px] text-[#8d939e] uppercase font-bold tracking-wider border-b border-[#282a32]/60 mb-3">
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FF5500]"></span>
+          Árbol del Torneo
+        </span>
+        <span className="text-[#FF5500] font-black">
+          Desliza horizontalmente →
+        </span>
+      </div>
+
+      <div className="overflow-x-auto overscroll-x-contain pb-2">
+        <div
+          className="relative"
+          style={{
+            width: `${totalWidth}px`,
+            height: `${totalHeight}px`,
+            minHeight: "450px",
+          }}
+        >
         {/* Round Header Labels */}
         {Array.from({ length: state.rounds }).map((_, r) => {
           const x = PADDING_LEFT + r * (CARD_WIDTH + COL_GAP);
@@ -371,6 +383,7 @@ export default function BracketTree({
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );

@@ -384,55 +384,57 @@ export default function BracketGenerator() {
           </div>
 
           {/* Add Player Input */}
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               value={newPlayer}
               onChange={(e) => setNewPlayer(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addPlayer()}
               placeholder="Ingresar nick del jugador..."
-              className="flex-1 bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded-lg px-4 py-2.5 text-sm font-semibold text-white placeholder:text-[#474c57] focus:outline-none transition-colors"
+              className="flex-1 w-full bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded-lg px-4 py-2.5 text-sm font-semibold text-white placeholder:text-[#474c57] focus:outline-none transition-colors"
             />
-            <button
-              onClick={addPlayer}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#FF5500] hover:bg-[#ff6b1a] text-white text-xs font-extrabold uppercase tracking-wider rounded-lg transition-all shadow-md shadow-[#FF5500]/20 cursor-pointer"
-            >
-              <UserPlus size={14} />
-              Añadir
-            </button>
-            {user &&
-              !state.participants.some(
-                (p) =>
-                  p.toLowerCase() ===
-                  (user.displayName || user.username).toLowerCase()
-              ) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const name = user.displayName || user.username;
-                    const updated = [...state.participants, name];
-                    const updatedLeaderboard = {
-                      ...(state.leaderboard || {}),
-                      [name]: state.leaderboard?.[name] || {
-                        kills: 0,
-                        deaths: 0,
-                      },
-                    };
-                    const newState = {
-                      ...state,
-                      participants: updated,
-                      leaderboard: updatedLeaderboard,
-                    };
-                    if (isEditingPlayers) setState(newState);
-                    else saveState(newState);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-2.5 bg-[#FF5500]/15 hover:bg-[#FF5500]/25 text-[#FF5500] border border-[#FF5500]/40 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                  title="Anotarme al torneo con mi cuenta activa"
-                >
-                  <UserPlus size={14} />
-                  <span>Anotarme</span>
-                </button>
-              )}
+            <div className="flex gap-2">
+              <button
+                onClick={addPlayer}
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 bg-[#FF5500] hover:bg-[#ff6b1a] text-white text-xs font-extrabold uppercase tracking-wider rounded-lg transition-all shadow-md shadow-[#FF5500]/20 cursor-pointer"
+              >
+                <UserPlus size={14} />
+                Añadir
+              </button>
+              {user &&
+                !state.participants.some(
+                  (p) =>
+                    p.toLowerCase() ===
+                    (user.displayName || user.username).toLowerCase()
+                ) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = user.displayName || user.username;
+                      const updated = [...state.participants, name];
+                      const updatedLeaderboard = {
+                        ...(state.leaderboard || {}),
+                        [name]: state.leaderboard?.[name] || {
+                          kills: 0,
+                          deaths: 0,
+                        },
+                      };
+                      const newState = {
+                        ...state,
+                        participants: updated,
+                        leaderboard: updatedLeaderboard,
+                      };
+                      if (isEditingPlayers) setState(newState);
+                      else saveState(newState);
+                    }}
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2.5 bg-[#FF5500]/15 hover:bg-[#FF5500]/25 text-[#FF5500] border border-[#FF5500]/40 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap"
+                    title="Anotarme al torneo con mi cuenta activa"
+                  >
+                    <UserPlus size={14} />
+                    <span>Anotarme</span>
+                  </button>
+                )}
+            </div>
           </div>
 
           {/* Player List */}

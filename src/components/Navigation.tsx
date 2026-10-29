@@ -19,54 +19,55 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16 gap-3">
             {/* Logo & Title */}
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="relative w-9 h-9 rounded-md overflow-hidden bg-[#1a1b1f] border border-[#282a32] p-1 flex items-center justify-center shadow-md">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
+              <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-md overflow-hidden bg-[#1a1b1f] border border-[#282a32] p-1 flex items-center justify-center shadow-md shrink-0">
                 <img
                   src="/logo.png"
                   alt="CS Logo"
                   className="w-full h-full object-contain filter drop-shadow"
                 />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-sm sm:text-base font-extrabold tracking-wider uppercase text-white">
-                    UADE CS 1.6 <span className="text-[#FF5500]">1V1 TOURNAMENT</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <h1 className="text-xs sm:text-base font-extrabold tracking-wider uppercase text-white truncate">
+                    UADE CS 1.6 <span className="text-[#FF5500] hidden sm:inline">1V1 TOURNAMENT</span>
+                    <span className="text-[#FF5500] sm:hidden">1v1</span>
                   </h1>
-                  <span className="hidden md:inline-block px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-[#FF5500]/15 text-[#FF5500] border border-[#FF5500]/30 rounded">
+                  <span className="hidden md:inline-block px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-[#FF5500]/15 text-[#FF5500] border border-[#FF5500]/30 rounded shrink-0">
                     LAN EDITION
                   </span>
                 </div>
-                <p className="text-[10px] text-[#8d939e] tracking-widest uppercase font-semibold">
+                <p className="text-[9px] sm:text-[10px] text-[#8d939e] tracking-widest uppercase font-semibold hidden xs:block truncate">
                   TOURNAMENT & VETO SYSTEM
                 </p>
               </div>
             </div>
 
             {/* Navigation Tabs */}
-            <nav className="flex gap-1.5 bg-[#141518] p-1 rounded-lg border border-[#282a32]">
+            <nav className="flex gap-1 bg-[#141518] p-1 rounded-lg border border-[#282a32] shrink-0">
               <button
                 onClick={() => onTabChange("bracket")}
-                className={`flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer ${
                   activeTab === "bracket"
                     ? "bg-[#FF5500] text-white shadow-lg shadow-[#FF5500]/25"
                     : "text-[#8d939e] hover:text-white hover:bg-[#1a1b1f]"
                 }`}
               >
-                <Swords size={15} />
-                <span className="hidden sm:inline">Brackets Torneo</span>
-                <span className="sm:hidden">Brackets</span>
+                <Swords size={14} className="shrink-0" />
+                <span className="hidden md:inline">Brackets Torneo</span>
+                <span className="md:hidden">Bracket</span>
               </button>
               <button
                 onClick={() => onTabChange("leaderboard")}
-                className={`flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer ${
                   activeTab === "leaderboard"
                     ? "bg-[#FF5500] text-white shadow-lg shadow-[#FF5500]/25"
                     : "text-[#8d939e] hover:text-white hover:bg-[#1a1b1f]"
                 }`}
               >
-                <Trophy size={15} />
-                <span className="hidden sm:inline">Leaderboard</span>
-                <span className="sm:hidden">Leaderboard</span>
+                <Trophy size={14} className="shrink-0" />
+                <span className="hidden md:inline">Leaderboard</span>
+                <span className="md:hidden">Tabla</span>
               </button>
             </nav>
 

@@ -174,16 +174,16 @@ export default function MapVeto({
   };
 
   const content = (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <div className={`max-w-4xl mx-auto ${onClose ? "px-1 sm:px-3 py-1 space-y-5" : "px-4 sm:px-6 py-6 space-y-6"}`}>
       {/* Header bar */}
-      <div className="flex items-center justify-between border-b border-[#282a32] pb-4">
+      <div className="flex items-center justify-between border-b border-[#282a32] pb-3">
         <div>
-          <h2 className="text-lg font-black uppercase tracking-wider text-white flex items-center gap-2">
+          <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-white flex items-center gap-2">
             <span className="w-2.5 h-2.5 bg-[#FF5500] rounded-sm inline-block"></span>
             Veto de Mapas 1v1
           </h2>
-          <p className="text-xs text-[#8d939e] tracking-wide uppercase mt-0.5">
-            {p1Clean} <span className="text-[#FF5500]">VS</span> {p2Clean} · Sorteo centralizado & descarte
+          <p className="text-xs text-[#8d939e] tracking-wide uppercase mt-0.5 truncate max-w-[260px] sm:max-w-none">
+            {p1Clean} <span className="text-[#FF5500]">VS</span> {p2Clean} · Sorteo & descarte
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -192,7 +192,7 @@ export default function MapVeto({
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#8d939e] hover:text-white bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] rounded transition-all cursor-pointer"
           >
             <RotateCcw size={13} />
-            <span>Reiniciar</span>
+            <span className="hidden sm:inline">Reiniciar</span>
           </button>
           {onClose && (
             <button
@@ -231,14 +231,20 @@ export default function MapVeto({
                     <span>{player1Choice === "cara" ? "CARA" : "CRUZ"}</span>
                   </span>
                 </div>
-                <input
-                  type="text"
-                  disabled={phase !== "setup"}
-                  value={player1}
-                  onChange={(e) => setPlayer1(e.target.value)}
-                  placeholder="Nick del Jugador 1..."
-                  className="w-full bg-transparent text-white font-bold text-base placeholder:text-[#474c57] focus:outline-none"
-                />
+                {initialP1 ? (
+                  <div className="text-white font-black text-base truncate py-0.5">
+                    {player1}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    disabled={phase !== "setup"}
+                    value={player1}
+                    onChange={(e) => setPlayer1(e.target.value)}
+                    placeholder="Nick del Jugador 1..."
+                    className="w-full bg-transparent text-white font-bold text-base placeholder:text-[#474c57] focus:outline-none"
+                  />
+                )}
               </div>
 
               {/* VS Divider */}
@@ -260,14 +266,20 @@ export default function MapVeto({
                     <span className="text-[9px] text-[#8d939e] ml-0.5">(auto)</span>
                   </span>
                 </div>
-                <input
-                  type="text"
-                  disabled={phase !== "setup"}
-                  value={player2}
-                  onChange={(e) => setPlayer2(e.target.value)}
-                  placeholder="Nick del Jugador 2..."
-                  className="w-full bg-transparent text-white font-bold text-base placeholder:text-[#474c57] focus:outline-none"
-                />
+                {initialP2 ? (
+                  <div className="text-white font-black text-base truncate py-0.5">
+                    {player2}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    disabled={phase !== "setup"}
+                    value={player2}
+                    onChange={(e) => setPlayer2(e.target.value)}
+                    placeholder="Nick del Jugador 2..."
+                    className="w-full bg-transparent text-white font-bold text-base placeholder:text-[#474c57] focus:outline-none"
+                  />
+                )}
               </div>
             </div>
           </div>
