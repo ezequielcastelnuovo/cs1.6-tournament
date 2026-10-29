@@ -14,15 +14,19 @@ import {
   Edit3,
   ArrowLeft,
 } from "lucide-react";
-import type { TournamentState } from "@/lib/types";
+import type { TournamentState, Match } from "@/lib/types";
 import {
   INITIAL_STATE,
   generateBracket,
   selectWinner,
   undoMatch,
+  setMatchMap,
+  setMatchScoreAndWinner,
 } from "@/lib/types";
 import BracketTree from "./BracketTree";
 import ChampionCelebration from "./ChampionCelebration";
+import MatchDetailModal from "./MatchDetailModal";
+import MapVeto from "./MapVeto";
 import { useAuth } from "@/context/AuthContext";
 
 export default function BracketGenerator() {
@@ -34,6 +38,10 @@ export default function BracketGenerator() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Match detail and Veto modals
+  const [activeDetailMatch, setActiveDetailMatch] = useState<Match | null>(null);
+  const [activeVetoMatch, setActiveVetoMatch] = useState<Match | null>(null);
 
   // Fetch state scoped to the logged-in user
   const fetchState = useCallback(async () => {
@@ -167,6 +175,41 @@ export default function BracketGenerator() {
   const handleUndoMatch = (matchId: string) => {
     const newState = undoMatch(state, matchId);
     saveState(newState);
+  };
+
+  const handleOpenVeto = (match: Match) => {
+    setActiveDetailMatch(null);
+    setActiveVetoMatch(match);
+  };
+
+  const handleOpenDetail = (match: Match) => {
+    // Keep updated match reference from current state
+    const current = state.matches.find((m) => m.id === match.id) || match;
+    setActiveDetailMatch(current);
+  };
+
+  const handleMapSelected = (mapName: string) => {
+    if (!activeVetoMatch) return;
+    const newState = setMatchMap(state, activeVetoMatch.id, mapName);
+    saveState(newState);
+    setActiveVetoMatch(null);
+  };
+
+  const handleSaveScore = (
+    matchId: string,
+    p1Kills: number,
+    p2Kills: number,
+    winner?: string
+  ) => {
+    const newState = setMatchScoreAndWinner(
+      state,
+      matchId,
+      p1Kills,
+      p2Kills,
+      winner
+    );
+    saveState(newState);
+    setActiveDetailMatch(null);
   };
 
   const handleEditBracket = () => {
@@ -459,6 +502,29 @@ export default function BracketGenerator() {
           state={state}
           onSelectWinner={handleSelectWinner}
           onUndoMatch={handleUndoMatch}
+          onOpenMatchDetail={handleOpenDetail}
+          onOpenVeto={handleOpenVeto}
+        />
+      )}
+
+      {/* Match Detail & Score Entry Modal */}
+      {activeDetailMatch && (
+        <MatchDetailModal
+          match={state.matches.find((m) => m.id === activeDetailMatch.id) || activeDetailMatch}
+          onClose={() => setActiveDetailMatch(null)}
+          onOpenVeto={handleOpenVeto}
+          onSaveScore={handleSaveScore}
+          onUndoMatch={handleUndoMatch}
+        />
+      )}
+
+      {/* In-context Map Veto Modal */}
+      {activeVetoMatch && activeVetoMatch.player1 && activeVetoMatch.player2 && (
+        <MapVeto
+          player1={activeVetoMatch.player1}
+          player2={activeVetoMatch.player2}
+          onMapSelected={handleMapSelected}
+          onClose={() => setActiveVetoMatch(null)}
         />
       )}
     </div>

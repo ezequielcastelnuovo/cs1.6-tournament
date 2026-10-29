@@ -8,6 +8,11 @@ export interface Match {
   isBye?: boolean;
   nextMatchId?: string | null;
   nextMatchSlot?: "player1" | "player2" | null;
+  selectedMap?: string | null;
+  score?: {
+    player1Kills: number;
+    player2Kills: number;
+  } | null;
 }
 
 export interface TournamentState {
@@ -155,6 +160,83 @@ export function generateBracket(
   };
 }
 
+export function recalculateLeaderboard(
+  matches: Match[],
+  participants: string[]
+): Record<string, { kills: number; deaths: number }> {
+  const board: Record<string, { kills: number; deaths: number }> = {};
+  participants.forEach((p) => {
+    board[p] = { kills: 0, deaths: 0 };
+  });
+
+  matches.forEach((m) => {
+    if (m.score && m.player1 && m.player2) {
+      if (!board[m.player1]) board[m.player1] = { kills: 0, deaths: 0 };
+      if (!board[m.player2]) board[m.player2] = { kills: 0, deaths: 0 };
+
+      board[m.player1].kills += m.score.player1Kills;
+      board[m.player1].deaths += m.score.player2Kills;
+
+      board[m.player2].kills += m.score.player2Kills;
+      board[m.player2].deaths += m.score.player1Kills;
+    }
+  });
+
+  return board;
+}
+
+export function setMatchMap(
+  state: TournamentState,
+  matchId: string,
+  selectedMap: string
+): TournamentState {
+  const matches = state.matches.map((m) =>
+    m.id === matchId ? { ...m, selectedMap } : { ...m }
+  );
+  return { ...state, matches };
+}
+
+export function setMatchScoreAndWinner(
+  state: TournamentState,
+  matchId: string,
+  p1Kills: number,
+  p2Kills: number,
+  forcedWinner?: string
+): TournamentState {
+  const matches = state.matches.map((m) => ({ ...m }));
+  const match = matches.find((m) => m.id === matchId);
+  if (!match) return state;
+
+  match.score = {
+    player1Kills: p1Kills,
+    player2Kills: p2Kills,
+  };
+
+  const decidedWinner =
+    forcedWinner ||
+    (p1Kills > p2Kills
+      ? match.player1
+      : p2Kills > p1Kills
+      ? match.player2
+      : match.winner);
+
+  if (decidedWinner) {
+    match.winner = decidedWinner;
+    if (match.nextMatchId && match.nextMatchSlot) {
+      const nextMatch = matches.find((m) => m.id === match.nextMatchId);
+      if (nextMatch) {
+        nextMatch[match.nextMatchSlot] = decidedWinner;
+      }
+    }
+  }
+
+  const finalMatch = matches.find((m) => m.round === state.rounds - 1);
+  const champion = finalMatch?.winner || null;
+  const leaderboard = recalculateLeaderboard(matches, state.participants);
+
+  return { ...state, matches, champion, leaderboard };
+}
+
 export function selectWinner(
   state: TournamentState,
   matchId: string,
@@ -190,6 +272,7 @@ export function undoMatch(
   if (!match) return state;
 
   match.winner = null;
+  match.score = null;
 
   // Recursively clear downstream slots
   function clearDownstream(targetMatch: Match) {
@@ -199,6 +282,7 @@ export function undoMatch(
         next[targetMatch.nextMatchSlot] = null;
         if (next.winner) {
           next.winner = null;
+          next.score = null;
           clearDownstream(next);
         }
       }
@@ -209,8 +293,9 @@ export function undoMatch(
 
   const finalMatch = matches.find((m) => m.round === state.rounds - 1);
   const champion = finalMatch?.winner || null;
+  const leaderboard = recalculateLeaderboard(matches, state.participants);
 
-  return { ...state, matches, champion };
+  return { ...state, matches, champion, leaderboard };
 }
 
 // Clean CS maps with icon identifiers, preview images, and weapon mode rules

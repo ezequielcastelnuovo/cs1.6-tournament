@@ -6,8 +6,8 @@ import AuthModal from "@/components/AuthModal";
 import UserProfileModal from "@/components/UserProfileModal";
 
 interface NavigationProps {
-  activeTab: "bracket" | "veto" | "leaderboard";
-  onTabChange: (tab: "bracket" | "veto" | "leaderboard") => void;
+  activeTab: "bracket" | "leaderboard";
+  onTabChange: (tab: "bracket" | "leaderboard") => void;
 }
 
 export default function Navigation({ activeTab, onTabChange }: NavigationProps) {
@@ -55,18 +55,6 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
                 <Swords size={15} />
                 <span className="hidden sm:inline">Brackets Torneo</span>
                 <span className="sm:hidden">Brackets</span>
-              </button>
-              <button
-                onClick={() => onTabChange("veto")}
-                className={`flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-md text-xs font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer ${
-                  activeTab === "veto"
-                    ? "bg-[#FF5500] text-white shadow-lg shadow-[#FF5500]/25"
-                    : "text-[#8d939e] hover:text-white hover:bg-[#1a1b1f]"
-                }`}
-              >
-                <Map size={15} />
-                <span className="hidden sm:inline">Veto de Mapas</span>
-                <span className="sm:hidden">Veto</span>
               </button>
               <button
                 onClick={() => onTabChange("leaderboard")}

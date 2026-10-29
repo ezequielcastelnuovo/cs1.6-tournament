@@ -3,14 +3,13 @@
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import BracketGenerator from "@/components/BracketGenerator";
-import MapVeto from "@/components/MapVeto";
 import Leaderboard from "@/components/Leaderboard";
 import { useAuth } from "@/context/AuthContext";
 import { Lock, LogIn, UserPlus, Shield, Swords, Trophy, Map, Sparkles, Loader2 } from "lucide-react";
 
 export default function Home() {
   const { user, isLoading, openAuthModal } = useAuth();
-  const [activeTab, setActiveTab] = useState<"bracket" | "veto" | "leaderboard">("bracket");
+  const [activeTab, setActiveTab] = useState<"bracket" | "leaderboard">("bracket");
 
   return (
     <>
@@ -89,19 +88,19 @@ export default function Home() {
                     Brackets Dinámicos 1v1
                   </h3>
                   <p className="text-[11px] text-[#8d939e] leading-relaxed">
-                    Generación inteligente con pase de impares, avance directo a la Gran Final y trazado de líneas en tiempo real.
+                    Generación inteligente con pase de impares, avance directo a la Gran Final y veto de mapas integrado.
                   </p>
                 </div>
 
                 <div className="bg-[#101114] border border-[#282a32]/60 rounded-xl p-4">
                   <div className="w-8 h-8 rounded-lg bg-[#FF5500]/15 flex items-center justify-center text-[#FF5500] mb-3">
-                    <Map size={16} />
+                    <Trophy size={16} />
                   </div>
                   <h3 className="text-xs font-black uppercase text-white mb-1 tracking-wide">
-                    Veto Táctico & Moneda 3D
+                    Scores & Leaderboard
                   </h3>
                   <p className="text-[11px] text-[#8d939e] leading-relaxed">
-                    Sorteo de moneda Cara/Cruz con física 3D y sistema de descarte competitivo para mapas de Counter-Strike 1.6.
+                    Carga los resultados de cada enfrentamiento y observa cómo el ranking se actualiza de forma automática.
                   </p>
                 </div>
               </div>
@@ -111,7 +110,6 @@ export default function Home() {
           /* USUARIO LOGUEADO: Acceso completo con persistencia asegurada en su cuenta */
           <>
             {activeTab === "bracket" && <BracketGenerator />}
-            {activeTab === "veto" && <MapVeto />}
             {activeTab === "leaderboard" && <Leaderboard />}
           </>
         )}

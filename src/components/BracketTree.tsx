@@ -1,13 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { RotateCcw, Trophy } from "lucide-react";
+import { RotateCcw, Trophy, Map, Crosshair } from "lucide-react";
 import type { TournamentState, Match } from "@/lib/types";
 
 interface BracketTreeProps {
   state: TournamentState;
   onSelectWinner: (matchId: string, winner: string) => void;
   onUndoMatch: (matchId: string) => void;
+  onOpenMatchDetail?: (match: Match) => void;
+  onOpenVeto?: (match: Match) => void;
 }
 
 function getRoundLabel(round: number, totalRounds: number): string {
@@ -19,8 +21,8 @@ function getRoundLabel(round: number, totalRounds: number): string {
   return `RONDA ${round + 1}`;
 }
 
-const CARD_WIDTH = 240;
-const CARD_HEIGHT = 86;
+const CARD_WIDTH = 250;
+const CARD_HEIGHT = 90;
 const COL_GAP = 70;
 const BASE_GAP = 28;
 const PADDING_TOP = 64;
@@ -30,6 +32,8 @@ export default function BracketTree({
   state,
   onSelectWinner,
   onUndoMatch,
+  onOpenMatchDetail,
+  onOpenVeto,
 }: BracketTreeProps) {
   // 1. Calculate positions for every match so children are centered at parent midpoints
   const { positions, totalWidth, totalHeight } = useMemo(() => {
@@ -192,7 +196,7 @@ export default function BracketTree({
                     : "border-[#282a32] bg-[#141518]"
                 }`}
               >
-                {/* Header status */}
+                {/* Header status & Map tag */}
                 {match.isBye ? (
                   <div className="bg-[#242630] px-3 py-1 text-[9px] font-black uppercase tracking-widest text-[#FF5500] flex items-center justify-between border-b border-[#282a32]">
                     <span>PASE DIRECTO</span>
@@ -200,27 +204,78 @@ export default function BracketTree({
                       BYE
                     </span>
                   </div>
-                ) : canClick ? (
-                  <div className="bg-[#242630] px-3 py-0.5 text-[9px] font-black uppercase tracking-widest text-[#FF5500] flex items-center justify-between border-b border-[#282a32]">
-                    <span>Elegir Ganador</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF5500] animate-pulse"></span>
-                  </div>
-                ) : isDecided ? (
-                  <div className="bg-[#141518] px-3 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#8d939e] border-b border-[#282a32] flex items-center justify-between">
-                    <span>Finalizado</span>
-                    <button
-                      type="button"
-                      onClick={() => onUndoMatch(match.id)}
-                      className="text-[#8d939e] hover:text-[#FF5500] flex items-center gap-1 font-bold text-[9px] transition-colors"
-                      title="Deshacer resultado"
-                    >
-                      <RotateCcw size={10} />
-                      Deshacer
-                    </button>
-                  </div>
                 ) : (
-                  <div className="bg-[#121316] px-3 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-[#525763] border-b border-[#282a32]">
-                    En espera del rival
+                  <div className="bg-[#20222a] px-2.5 py-1 text-[9px] font-black uppercase tracking-wider flex items-center justify-between border-b border-[#282a32]">
+                    <div className="flex items-center gap-1.5 truncate">
+                      {isDecided ? (
+                        <>
+                          <span className="text-[#8d939e]">Finalizado</span>
+                          {match.score && (
+                            <span className="text-white font-mono font-bold">
+                              {match.score.player1Kills}-{match.score.player2Kills}
+                            </span>
+                          )}
+                        </>
+                      ) : canClick ? (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF5500] animate-pulse"></span>
+                          <span className="text-[#FF5500]">Duelo Activo</span>
+                        </>
+                      ) : (
+                        <span className="text-[#525763]">En Espera</span>
+                      )}
+                    </div>
+
+                    {/* Map badge or Veto button */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {match.selectedMap ? (
+                        <button
+                          type="button"
+                          onClick={() => onOpenMatchDetail?.(match)}
+                          className="flex items-center gap-1 text-[9px] font-extrabold uppercase text-[#FF5500] bg-[#FF5500]/15 hover:bg-[#FF5500]/25 px-1.5 py-0.5 rounded border border-[#FF5500]/30 transition-all cursor-pointer"
+                          title="Ver detalle del partido"
+                        >
+                          <Map size={9} />
+                          <span className="max-w-[70px] truncate">{match.selectedMap}</span>
+                        </button>
+                      ) : match.player1 && match.player2 ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onOpenVeto ? onOpenVeto(match) : onOpenMatchDetail?.(match)
+                          }
+                          className="flex items-center gap-1 text-[8.5px] font-black uppercase text-white bg-[#FF5500] hover:bg-[#ff6b1a] px-1.5 py-0.5 rounded transition-all cursor-pointer shadow-sm animate-pulse"
+                          title="Realizar veto de mapa"
+                        >
+                          <Map size={9} />
+                          <span>Vetar</span>
+                        </button>
+                      ) : null}
+
+                      {/* Detail / Score trigger */}
+                      {match.player1 && match.player2 && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenMatchDetail?.(match)}
+                          className="p-0.5 text-[#8d939e] hover:text-white transition-colors cursor-pointer"
+                          title="Cargar score / Info del duelo"
+                        >
+                          <Crosshair size={11} />
+                        </button>
+                      )}
+
+                      {/* Undo trigger if decided */}
+                      {isDecided && (
+                        <button
+                          type="button"
+                          onClick={() => onUndoMatch(match.id)}
+                          className="text-[#8d939e] hover:text-[#FF5500] transition-colors cursor-pointer ml-0.5"
+                          title="Deshacer resultado"
+                        >
+                          <RotateCcw size={10} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -272,7 +327,7 @@ export default function BracketTree({
                           onClick={() =>
                             canClick && onSelectWinner(match.id, player)
                           }
-                          className={`w-full px-3 py-1.5 text-left text-xs font-bold flex items-center gap-2.5 transition-all ${
+                          className={`w-full px-2.5 py-1.5 text-left text-xs font-bold flex items-center justify-between gap-2 transition-all ${
                             isWinner
                               ? "bg-[#FF5500]/15 text-white"
                               : isLoser
@@ -282,19 +337,31 @@ export default function BracketTree({
                               : "bg-[#1a1b1f] text-[#8d939e]"
                           }`}
                         >
-                          <span
-                            className={`w-4 h-4 rounded flex items-center justify-center text-[9px] font-black shrink-0 ${
-                              isWinner
-                                ? "bg-[#FF5500] text-white shadow-sm"
-                                : "bg-[#282a32] text-[#8d939e]"
-                            }`}
-                          >
-                            {isWinner ? "W" : idx + 1}
-                          </span>
-                          <span className="truncate flex-1">{player}</span>
-                          {isWinner && isFinal && (
-                            <Trophy size={13} className="text-[#FF5500] shrink-0" />
-                          )}
+                          <div className="flex items-center gap-2 truncate min-w-0">
+                            <span
+                              className={`w-4 h-4 rounded flex items-center justify-center text-[9px] font-black shrink-0 ${
+                                isWinner
+                                  ? "bg-[#FF5500] text-white shadow-sm"
+                                  : "bg-[#282a32] text-[#8d939e]"
+                              }`}
+                            >
+                              {isWinner ? "W" : idx + 1}
+                            </span>
+                            <span className="truncate">{player}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {match.score && (
+                              <span className="text-[10px] font-mono font-black text-amber-400 bg-[#121316] px-1.5 py-0.5 rounded border border-[#282a32]">
+                                {idx === 0
+                                  ? match.score.player1Kills
+                                  : match.score.player2Kills}K
+                              </span>
+                            )}
+                            {isWinner && isFinal && (
+                              <Trophy size={13} className="text-[#FF5500] shrink-0" />
+                            )}
+                          </div>
                         </button>
                       );
                     })}

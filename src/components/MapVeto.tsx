@@ -6,6 +6,7 @@ import {
   Ban,
   Trophy,
   CheckCircle2,
+  X,
 } from "lucide-react";
 import { CS_MAPS } from "@/lib/types";
 import {
@@ -26,10 +27,22 @@ interface MapState {
   order: number | null;
 }
 
-export default function MapVeto() {
+interface MapVetoProps {
+  player1?: string;
+  player2?: string;
+  onMapSelected?: (mapName: string) => void;
+  onClose?: () => void;
+}
+
+export default function MapVeto({
+  player1: initialP1,
+  player2: initialP2,
+  onMapSelected,
+  onClose,
+}: MapVetoProps = {}) {
   const [phase, setPhase] = useState<VetoPhase>("setup");
-  const [player1, setPlayer1] = useState("");
-  const [player2, setPlayer2] = useState("");
+  const [player1, setPlayer1] = useState(initialP1 || "");
+  const [player2, setPlayer2] = useState(initialP2 || "");
 
   const [player1Choice, setPlayer1Choice] = useState<CoinSide>("cara");
   const player2Choice: CoinSide = player1Choice === "cara" ? "cruz" : "cara";
@@ -160,7 +173,7 @@ export default function MapVeto() {
     }
   };
 
-  return (
+  const content = (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       {/* Header bar */}
       <div className="flex items-center justify-between border-b border-[#282a32] pb-4">
@@ -170,16 +183,27 @@ export default function MapVeto() {
             Veto de Mapas 1v1
           </h2>
           <p className="text-xs text-[#8d939e] tracking-wide uppercase mt-0.5">
-            Sorteo centralizado & descarte competitivo estilo FaceIT
+            {p1Clean} <span className="text-[#FF5500]">VS</span> {p2Clean} · Sorteo centralizado & descarte
           </p>
         </div>
-        <button
-          onClick={resetAll}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#8d939e] hover:text-white bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] rounded transition-all cursor-pointer"
-        >
-          <RotateCcw size={13} />
-          Reiniciar
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={resetAll}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#8d939e] hover:text-white bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] rounded transition-all cursor-pointer"
+          >
+            <RotateCcw size={13} />
+            <span>Reiniciar</span>
+          </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-[#8d939e] hover:text-white bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] transition-colors cursor-pointer"
+              title="Cerrar veto"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* PHASE 1 & 2: SETUP + COIN FLIP */}
@@ -579,15 +603,47 @@ export default function MapVeto() {
             </div>
           </div>
 
-          <button
-            onClick={resetAll}
-            className="w-full py-3.5 bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] text-white font-extrabold uppercase tracking-wider rounded-xl hover:bg-[#22242a] transition-all shadow-lg"
-          >
-            Configurar Nuevo Duelo / Revancha
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            {onMapSelected && (
+              <button
+                type="button"
+                onClick={() => {
+                  onMapSelected(selectedMap);
+                  onClose?.();
+                }}
+                className="flex-1 py-3.5 bg-gradient-to-r from-[#FF5500] to-[#E04B00] hover:from-[#ff6b1a] hover:to-[#FF5500] text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-xl shadow-[#FF5500]/30 cursor-pointer"
+              >
+                Asignar Mapa al Duelo y Volver a la Bracket
+              </button>
+            )}
+            <button
+              onClick={resetAll}
+              className="py-3.5 px-6 bg-[#1a1b1f] border border-[#282a32] hover:border-[#FF5500] text-[#8d939e] hover:text-white font-extrabold uppercase tracking-wider rounded-xl hover:bg-[#22242a] transition-all shadow-lg text-xs cursor-pointer"
+            >
+              Reiniciar Veto
+            </button>
+          </div>
         </div>
         );
       })()}
     </div>
   );
+
+  if (onClose) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in-up"
+        onClick={onClose}
+      >
+        <div
+          className="relative w-full max-w-4xl my-auto bg-[#141518] border border-[#282a32] rounded-2xl shadow-2xl overflow-hidden p-3 sm:p-5 max-h-[95vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {content}
+        </div>
+      </div>
+    );
+  }
+
+  return content;
 }

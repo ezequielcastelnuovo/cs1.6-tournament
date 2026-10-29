@@ -6,8 +6,6 @@ import {
   Flame,
   Search,
   RefreshCw,
-  Plus,
-  Minus,
   Skull,
   Crosshair,
   TrendingUp,
@@ -80,18 +78,16 @@ export default function Leaderboard() {
         }
       }
 
-      // 3. Fusionar datos: Server > Local
-      const mergedStats: Record<string, { kills: number; deaths: number }> = {
-        ...localStats,
-        ...(serverState?.leaderboard || {}),
-      };
+      // 3. Fusionar datos: El leaderboard calculado del torneo es la fuente de verdad
+      let mergedStats: Record<string, { kills: number; deaths: number }> = {};
+      if (serverState?.leaderboard && Object.keys(serverState.leaderboard).length > 0) {
+        mergedStats = { ...serverState.leaderboard };
+      } else {
+        mergedStats = { ...localStats };
+      }
 
-      // Traer participantes del bracket si se pulsa "Sincronizar Bracket" o si nunca se inicializó
-      const hasDefinedStats =
-        (serverState?.leaderboard && Object.keys(serverState.leaderboard).length > 0) ||
-        Object.keys(localStats).length > 0;
-
-      if ((isManualSync || !hasDefinedStats) && serverState?.participants && Array.isArray(serverState.participants)) {
+      // Asegurar que todos los participantes del bracket figuren en la tabla
+      if (serverState?.participants && Array.isArray(serverState.participants)) {
         serverState.participants.forEach((p) => {
           const clean = p.trim();
           if (clean && !mergedStats[clean]) {
@@ -178,33 +174,6 @@ export default function Leaderboard() {
       console.warn("Error guardando en API:", err);
       setSaveStatus("idle");
     }
-  };
-
-  // Modificar Kills o Deaths
-  const updatePlayerStat = (
-    playerName: string,
-    field: "kills" | "deaths",
-    deltaOrValue: number,
-    isAbsolute = false
-  ) => {
-    setStats((prev) => {
-      const current = prev[playerName] || { kills: 0, deaths: 0 };
-      const newValue = isAbsolute
-        ? Math.max(0, Math.floor(deltaOrValue))
-        : Math.max(0, current[field] + deltaOrValue);
-
-      const next = {
-        ...prev,
-        [playerName]: {
-          ...current,
-          [field]: newValue,
-        },
-      };
-
-      // Debounced o directo
-      persistStats(next);
-      return next;
-    });
   };
 
   // Agregar jugador manual
@@ -364,7 +333,7 @@ export default function Leaderboard() {
             Leaderboard 1v1
           </h2>
           <p className="text-xs text-[#8d939e] tracking-wide uppercase mt-0.5">
-            Tabla general de Kills, Deaths & K/D Ratio en tiempo real
+            Estadísticas calculadas automáticamente a partir de los resultados de cada duelo
           </p>
         </div>
 
@@ -586,8 +555,8 @@ export default function Leaderboard() {
               <tr className="border-b border-[#282a32] bg-[#141518]/90 text-[10px] font-black uppercase tracking-widest text-[#8d939e]">
                 <th className="py-3 px-4 w-16 text-center"># Pos</th>
                 <th className="py-3 px-4">Jugador</th>
-                <th className="py-3 px-4 text-center min-w-[170px]">Kills</th>
-                <th className="py-3 px-4 text-center min-w-[170px]">Deaths</th>
+                <th className="py-3 px-4 text-center w-28">Kills</th>
+                <th className="py-3 px-4 text-center w-28">Deaths</th>
                 <th className="py-3 px-4 text-center w-24">+/- Diff</th>
                 <th className="py-3 px-4 text-center w-28">K/D Ratio</th>
               </tr>
@@ -681,78 +650,18 @@ export default function Leaderboard() {
                         </div>
                       </td>
 
-                      {/* KILLS CONTROLLER */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => updatePlayerStat(player.name, "kills", -1)}
-                            disabled={player.kills <= 0}
-                            className="w-7 h-7 rounded bg-[#141518] hover:bg-[#22242a] border border-[#282a32] hover:border-[#FF5500]/40 text-[#8d939e] hover:text-white flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                            title="Restar 1 kill"
-                          >
-                            <Minus size={12} />
-                          </button>
-
-                          <input
-                            type="number"
-                            min="0"
-                            value={player.kills}
-                            onChange={(e) =>
-                              updatePlayerStat(
-                                player.name,
-                                "kills",
-                                parseInt(e.target.value) || 0,
-                                true
-                              )
-                            }
-                            className="w-16 py-1 text-center bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded text-sm font-black text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          />
-
-                          <button
-                            onClick={() => updatePlayerStat(player.name, "kills", 1)}
-                            className="w-7 h-7 rounded bg-[#FF5500]/15 hover:bg-[#FF5500] border border-[#FF5500]/30 hover:border-[#FF5500] text-[#FF5500] hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
-                            title="Sumar 1 kill"
-                          >
-                            <Plus size={12} />
-                          </button>
-                        </div>
+                      {/* KILLS BADGE */}
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="inline-block px-3 py-1 rounded bg-[#FF5500]/15 border border-[#FF5500]/30 text-[#FF5500] font-black text-sm min-w-[50px]">
+                          {player.kills}
+                        </span>
                       </td>
 
-                      {/* DEATHS CONTROLLER */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => updatePlayerStat(player.name, "deaths", -1)}
-                            disabled={player.deaths <= 0}
-                            className="w-7 h-7 rounded bg-[#141518] hover:bg-[#22242a] border border-[#282a32] hover:border-red-500/40 text-[#8d939e] hover:text-white flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                            title="Restar 1 muerte"
-                          >
-                            <Minus size={12} />
-                          </button>
-
-                          <input
-                            type="number"
-                            min="0"
-                            value={player.deaths}
-                            onChange={(e) =>
-                              updatePlayerStat(
-                                player.name,
-                                "deaths",
-                                parseInt(e.target.value) || 0,
-                                true
-                              )
-                            }
-                            className="w-16 py-1 text-center bg-[#141518] border border-[#282a32] focus:border-red-500 rounded text-sm font-black text-slate-300 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          />
-
-                          <button
-                            onClick={() => updatePlayerStat(player.name, "deaths", 1)}
-                            className="w-7 h-7 rounded bg-[#141518] hover:bg-red-500/20 border border-[#282a32] hover:border-red-500/50 text-[#8d939e] hover:text-red-400 flex items-center justify-center transition-all cursor-pointer shadow-sm"
-                            title="Sumar 1 muerte"
-                          >
-                            <Plus size={12} />
-                          </button>
-                        </div>
+                      {/* DEATHS BADGE */}
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="inline-block px-3 py-1 rounded bg-[#141518] border border-[#282a32] text-slate-300 font-bold text-sm min-w-[50px]">
+                          {player.deaths}
+                        </span>
                       </td>
 
                       {/* +/- DIFF */}
