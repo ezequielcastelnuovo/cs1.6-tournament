@@ -8,12 +8,16 @@ const SESSIONS_KEY = "cs16-tournament-sessions";
 
 const globalStore = globalThis as unknown as {
   cs16_tournamentState?: TournamentState;
+  cs16_tournamentStates?: Record<string, TournamentState>;
   cs16_users?: Record<string, UserAccount>;
   cs16_sessions?: Record<string, UserSession>;
 };
 
 if (!globalStore.cs16_tournamentState) {
   globalStore.cs16_tournamentState = INITIAL_STATE;
+}
+if (!globalStore.cs16_tournamentStates) {
+  globalStore.cs16_tournamentStates = {};
 }
 if (!globalStore.cs16_users) {
   globalStore.cs16_users = {};
@@ -39,26 +43,50 @@ export function generateToken(): string {
     .join("");
 }
 
-export async function getTournamentState(): Promise<TournamentState> {
+export async function getTournamentState(userId?: string): Promise<TournamentState> {
+  const key = userId ? `${TOURNAMENT_KEY}:${userId}` : TOURNAMENT_KEY;
+
   try {
     if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+      if (userId && globalStore.cs16_tournamentStates?.[userId]) {
+        return globalStore.cs16_tournamentStates[userId];
+      }
       return globalStore.cs16_tournamentState || INITIAL_STATE;
     }
-    const state = await kv.get<TournamentState>(TOURNAMENT_KEY);
-    return state || globalStore.cs16_tournamentState || INITIAL_STATE;
+
+    const state = await kv.get<TournamentState>(key);
+    if (state) return state;
+
+    if (userId && globalStore.cs16_tournamentStates?.[userId]) {
+      return globalStore.cs16_tournamentStates[userId];
+    }
+    return globalStore.cs16_tournamentState || INITIAL_STATE;
   } catch (error) {
     console.warn("KV GET error, using in-memory state:", error);
+    if (userId && globalStore.cs16_tournamentStates?.[userId]) {
+      return globalStore.cs16_tournamentStates[userId];
+    }
     return globalStore.cs16_tournamentState || INITIAL_STATE;
   }
 }
 
 export async function setTournamentState(
-  state: TournamentState
+  state: TournamentState,
+  userId?: string
 ): Promise<void> {
+  const key = userId ? `${TOURNAMENT_KEY}:${userId}` : TOURNAMENT_KEY;
+
+  if (!globalStore.cs16_tournamentStates) {
+    globalStore.cs16_tournamentStates = {};
+  }
+  if (userId) {
+    globalStore.cs16_tournamentStates[userId] = state;
+  }
   globalStore.cs16_tournamentState = state;
+
   try {
     if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-      await kv.set(TOURNAMENT_KEY, state);
+      await kv.set(key, state);
     }
   } catch (error) {
     console.warn("KV SET error, preserved in memory:", error);

@@ -30,9 +30,26 @@ const LOCAL_STORAGE_USER_KEY = "cs16_user_account";
 const LOCAL_STORAGE_TOKEN_KEY = "cs16_session_token";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserPublicProfile | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<UserPublicProfile | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_USER_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return localStorage.getItem(LOCAL_STORAGE_TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  });
+
+  const [isLoading, setIsLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<"login" | "register">("login");
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -47,6 +64,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(savedUserStr);
         setUser(parsed);
         setToken(savedToken);
+      } else {
+        setUser(null);
+        setToken(null);
       }
     } catch (e) {
       console.warn("Error reading auth from localStorage:", e);

@@ -32,7 +32,7 @@ type SortMode = "kills" | "kd" | "diff" | "name";
 const LOCAL_STORAGE_KEY = "cs16-tournament-leaderboard";
 
 export default function Leaderboard() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [stats, setStats] = useState<Record<string, { kills: number; deaths: number }>>({});
   const [tournamentState, setTournamentState] = useState<TournamentState | null>(null);
   const [search, setSearch] = useState("");
@@ -45,14 +45,24 @@ export default function Leaderboard() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetCountdown, setResetCountdown] = useState(3);
 
+  const storageKey = user ? `cs16-tournament-leaderboard:${user.id}` : LOCAL_STORAGE_KEY;
+
   // Cargar estado inicial del torneo y estadísticas
   const loadData = useCallback(async (isManualSync = false) => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     if (isManualSync) setSyncing(true);
     else setLoading(true);
 
     try {
-      // 1. Obtener estado del bracket desde el servidor
-      const res = await fetch("/api/tournament", { cache: "no-store" });
+      // 1. Obtener estado del bracket desde el servidor con autenticación
+      const res = await fetch("/api/tournament", {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
       let serverState: TournamentState | null = null;
       if (res.ok) {
         serverState = await res.json();
@@ -63,7 +73,7 @@ export default function Leaderboard() {
       let localStats: Record<string, { kills: number; deaths: number }> = {};
       if (typeof window !== "undefined") {
         try {
-          const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+          const raw = localStorage.getItem(storageKey);
           if (raw) localStats = JSON.parse(raw);
         } catch (e) {
           console.warn("Error leyendo localStorage:", e);
@@ -138,7 +148,7 @@ export default function Leaderboard() {
     // Guardar en LocalStorage para persistencia instantánea y offline
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newStats));
+        localStorage.setItem(storageKey, JSON.stringify(newStats));
       } catch (e) {
         console.warn("Error guardando en localStorage:", e);
       }
@@ -147,14 +157,17 @@ export default function Leaderboard() {
     // Guardar en la API del servidor
     try {
       const stateToSave = currentState || tournamentState;
-      if (stateToSave) {
+      if (stateToSave && token) {
         const payload: TournamentState = {
           ...stateToSave,
           leaderboard: newStats,
         };
         await fetch("/api/tournament", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
         });
         setTournamentState(payload);
@@ -228,7 +241,7 @@ export default function Leaderboard() {
     // 1. Guardar en LocalStorage vacío
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(emptyStats));
+        localStorage.setItem(storageKey, JSON.stringify(emptyStats));
       } catch (e) {
         console.warn("Error guardando en localStorage:", e);
       }
@@ -236,14 +249,17 @@ export default function Leaderboard() {
 
     // 2. Guardar en API servidor con leaderboard vacío
     try {
-      if (tournamentState) {
+      if (tournamentState && token) {
         const payload: TournamentState = {
           ...tournamentState,
           leaderboard: emptyStats,
         };
         await fetch("/api/tournament", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
         });
         setTournamentState(payload);

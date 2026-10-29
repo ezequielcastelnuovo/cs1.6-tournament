@@ -26,7 +26,7 @@ import ChampionCelebration from "./ChampionCelebration";
 import { useAuth } from "@/context/AuthContext";
 
 export default function BracketGenerator() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [state, setState] = useState<TournamentState>(INITIAL_STATE);
   const [backupState, setBackupState] = useState<TournamentState | null>(null);
   const [isEditingPlayers, setIsEditingPlayers] = useState(false);
@@ -35,11 +35,29 @@ export default function BracketGenerator() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch state
+  // Fetch state scoped to the logged-in user
   const fetchState = useCallback(async () => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch("/api/tournament", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to fetch");
+      setLoading(true);
+      const res = await fetch("/api/tournament", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          setError("Inicia sesión para sincronizar los datos de tu torneo.");
+        }
+        return;
+      }
+
       const data: TournamentState = await res.json();
       setState(data);
       setError(null);
@@ -48,25 +66,38 @@ export default function BracketGenerator() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
-  // Save state
-  const saveState = useCallback(async (newState: TournamentState) => {
-    setState(newState);
-    setSaving(true);
-    try {
-      await fetch("/api/tournament", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newState),
-      });
-      setError(null);
-    } catch (err) {
-      console.warn("Save fallback:", err);
-    } finally {
-      setSaving(false);
-    }
-  }, []);
+  // Save state scoped to the logged-in user
+  const saveState = useCallback(
+    async (newState: TournamentState) => {
+      setState(newState);
+      if (!token) return;
+
+      setSaving(true);
+      try {
+        const res = await fetch("/api/tournament", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(newState),
+        });
+
+        if (!res.ok) {
+          throw new Error("Error al guardar");
+        }
+        setError(null);
+      } catch (err) {
+        console.warn("Save fallback:", err);
+        setError("Cambios guardados solo localmente.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [token]
+  );
 
   useEffect(() => {
     fetchState();

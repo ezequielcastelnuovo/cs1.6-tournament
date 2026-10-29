@@ -22,18 +22,21 @@ interface UserProfileModalProps {
 }
 
 export default function UserProfileModal({ onTabChange }: UserProfileModalProps) {
-  const { user, isProfileModalOpen, closeProfileModal, logout } = useAuth();
+  const { user, token, isProfileModalOpen, closeProfileModal, logout } = useAuth();
   const [tournament, setTournament] = useState<TournamentState | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [joinSuccess, setJoinSuccess] = useState(false);
 
   useEffect(() => {
-    if (!isProfileModalOpen) return;
+    if (!isProfileModalOpen || !token) return;
     setJoinSuccess(false);
 
     async function loadTournament() {
       try {
-        const res = await fetch("/api/tournament", { cache: "no-store" });
+        const res = await fetch("/api/tournament", {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
         if (res.ok) {
           const data = await res.json();
           setTournament(data);
@@ -44,7 +47,7 @@ export default function UserProfileModal({ onTabChange }: UserProfileModalProps)
     }
 
     loadTournament();
-  }, [isProfileModalOpen]);
+  }, [isProfileModalOpen, token]);
 
   if (!isProfileModalOpen || !user) return null;
 
@@ -99,7 +102,10 @@ export default function UserProfileModal({ onTabChange }: UserProfileModalProps)
 
       const res = await fetch("/api/tournament", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(updatedState),
       });
 
