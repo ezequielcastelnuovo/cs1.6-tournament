@@ -223,4 +223,20 @@ export const CS_MAPS = [
   { name: "awp_india", icon: "shield", label: "SNIPER", image: "/maps/awp_india.jpg", mode: "only awp" },
   { name: "fy_pool_day", icon: "waves", label: "POOL", image: "/maps/fy_pool_day.jpg", mode: "all guns" },
 ] as const;
+export interface UserAccount {
+  id: string;
+  username: string;
+  displayName: string;
+  passwordHash: string;
+  role: "player" | "admin";
+  avatarColor: string;
+  createdAt: string;
+}
 
+export type UserPublicProfile = Omit<UserAccount, "passwordHash">;
+
+export interface UserSession {
+  token: string;
+  user: UserPublicProfile;
+  expiresAt: number;
+}

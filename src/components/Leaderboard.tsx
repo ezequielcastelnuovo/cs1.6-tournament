@@ -19,6 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import type { TournamentState } from "@/lib/types";
+import { useAuth } from "@/context/AuthContext";
 
 interface PlayerStats {
   name: string;
@@ -31,6 +32,7 @@ type SortMode = "kills" | "kd" | "diff" | "name";
 const LOCAL_STORAGE_KEY = "cs16-tournament-leaderboard";
 
 export default function Leaderboard() {
+  const { user } = useAuth();
   const [stats, setStats] = useState<Record<string, { kills: number; deaths: number }>>({});
   const [tournamentState, setTournamentState] = useState<TournamentState | null>(null);
   const [search, setSearch] = useState("");
@@ -600,12 +602,21 @@ export default function Leaderboard() {
                   const isTop1 = idx === 0 && !search;
                   const isTop2 = idx === 1 && !search;
                   const isTop3 = idx === 2 && !search;
+                  const isCurrentUser = Boolean(
+                    user &&
+                      (player.name.trim().toLowerCase() === user.username.trim().toLowerCase() ||
+                       player.name.trim().toLowerCase() === user.displayName.trim().toLowerCase())
+                  );
 
                   return (
                     <tr
                       key={player.name}
                       className={`transition-colors hover:bg-[#141518]/60 ${
-                        isTop1 ? "bg-[#FF5500]/5" : ""
+                        isCurrentUser
+                          ? "bg-[#FF5500]/10 border-l-2 border-l-[#FF5500]"
+                          : isTop1
+                          ? "bg-[#FF5500]/5"
+                          : ""
                       }`}
                     >
                       {/* Posición */}
@@ -632,13 +643,24 @@ export default function Leaderboard() {
                       {/* Nick del jugador */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-md bg-[#141518] border border-[#282a32] flex items-center justify-center font-black text-xs text-[#FF5500]">
+                          <div
+                            className={`w-7 h-7 rounded-md border flex items-center justify-center font-black text-xs ${
+                              isCurrentUser
+                                ? "bg-[#FF5500] text-white border-[#FF5500]"
+                                : "bg-[#141518] border-[#282a32] text-[#FF5500]"
+                            }`}
+                          >
                             {player.name.charAt(0).toUpperCase()}
                           </div>
-                          <div>
+                          <div className="flex items-center gap-2">
                             <span className="text-sm font-black text-white tracking-wide block">
                               {player.name}
                             </span>
+                            {isCurrentUser && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#FF5500] text-white shadow-sm">
+                                TÚ
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>

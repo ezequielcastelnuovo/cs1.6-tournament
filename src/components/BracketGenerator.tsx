@@ -23,8 +23,10 @@ import {
 } from "@/lib/types";
 import BracketTree from "./BracketTree";
 import ChampionCelebration from "./ChampionCelebration";
+import { useAuth } from "@/context/AuthContext";
 
 export default function BracketGenerator() {
+  const { user } = useAuth();
   const [state, setState] = useState<TournamentState>(INITIAL_STATE);
   const [backupState, setBackupState] = useState<TournamentState | null>(null);
   const [isEditingPlayers, setIsEditingPlayers] = useState(false);
@@ -324,6 +326,39 @@ export default function BracketGenerator() {
               <UserPlus size={14} />
               Añadir
             </button>
+            {user &&
+              !state.participants.some(
+                (p) =>
+                  p.toLowerCase() ===
+                  (user.displayName || user.username).toLowerCase()
+              ) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const name = user.displayName || user.username;
+                    const updated = [...state.participants, name];
+                    const updatedLeaderboard = {
+                      ...(state.leaderboard || {}),
+                      [name]: state.leaderboard?.[name] || {
+                        kills: 0,
+                        deaths: 0,
+                      },
+                    };
+                    const newState = {
+                      ...state,
+                      participants: updated,
+                      leaderboard: updatedLeaderboard,
+                    };
+                    if (isEditingPlayers) setState(newState);
+                    else saveState(newState);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2.5 bg-[#FF5500]/15 hover:bg-[#FF5500]/25 text-[#FF5500] border border-[#FF5500]/40 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                  title="Anotarme al torneo con mi cuenta activa"
+                >
+                  <UserPlus size={14} />
+                  <span>Anotarme</span>
+                </button>
+              )}
           </div>
 
           {/* Player List */}

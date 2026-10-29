@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
   title: "UADE CS 1.6 1V1 TOURNAMENT // FaceIT LAN Edition",
@@ -14,9 +15,11 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className="bg-cs-dark text-white min-h-screen antialiased">
-        <div className="min-h-screen flex flex-col">
-          {children}
-        </div>
+        <AuthProvider>
+          <div className="min-h-screen flex flex-col">
+            {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );
