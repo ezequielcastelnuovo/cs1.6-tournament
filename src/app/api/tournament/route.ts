@@ -6,10 +6,12 @@ export const dynamic = "force-dynamic";
 
 async function getAuthenticatedUser(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-  const token = authHeader.substring(7).trim();
+  const bearerToken = authHeader?.startsWith("Bearer ")
+    ? authHeader.substring(7).trim()
+    : null;
+  const cookieToken = request.cookies.get("cs16_session")?.value;
+  const token = bearerToken || cookieToken;
+
   if (!token) return null;
   const session = await getSession(token);
   return session?.user || null;

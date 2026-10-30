@@ -95,6 +95,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (data.token) {
               localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, data.token);
             }
+          } else {
+            // Token legacy / inválido tras redeploy: auto-recuperar sesión
+            const localUser = localStorage.getItem(LOCAL_STORAGE_USER_KEY);
+            if (localUser) {
+              try {
+                const parsedUser = JSON.parse(localUser);
+                const recRes = await fetch("/api/auth/recover", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ user: parsedUser }),
+                });
+                if (recRes.ok) {
+                  const recData = await recRes.json();
+                  if (recData.success && recData.token) {
+                    setUser(recData.user);
+                    setToken(recData.token);
+                    localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(recData.user));
+                    localStorage.setItem(LOCAL_STORAGE_TOKEN_KEY, recData.token);
+                    return;
+                  }
+                }
+              } catch (recErr) {
+                console.warn("Auto-recover session failed:", recErr);
+              }
+            }
+
+            // Si no fue posible recuperar, limpiar estado local desincronizado
+            setUser(null);
+            setToken(null);
+            localStorage.removeItem(LOCAL_STORAGE_USER_KEY);
+            localStorage.removeItem(LOCAL_STORAGE_TOKEN_KEY);
           }
         }
       } catch (err) {

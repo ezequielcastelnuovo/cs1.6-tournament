@@ -129,14 +129,43 @@ export default function BracketGenerator() {
 
       setSaving(true);
       try {
-        const res = await fetch("/api/tournament", {
+        let currentToken = token;
+        let res = await fetch("/api/tournament", {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${currentToken}`,
           },
           body: JSON.stringify(newState),
         });
+
+        // Si el token expiró o se desincronizó, intentar auto-recuperar silenciosamente
+        if (res.status === 401 && user) {
+          try {
+            const recRes = await fetch("/api/auth/recover", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user }),
+            });
+            if (recRes.ok) {
+              const recData = await recRes.json();
+              if (recData.token) {
+                currentToken = recData.token;
+                localStorage.setItem("cs16_auth_token", recData.token);
+                res = await fetch("/api/tournament", {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${currentToken}`,
+                  },
+                  body: JSON.stringify(newState),
+                });
+              }
+            }
+          } catch (recoverErr) {
+            console.warn("Silent recovery failed:", recoverErr);
+          }
+        }
 
         if (!res.ok) {
           throw new Error("Error al guardar");
@@ -149,7 +178,7 @@ export default function BracketGenerator() {
         setSaving(false);
       }
     },
-    [token]
+    [token, user]
   );
 
   useEffect(() => {
