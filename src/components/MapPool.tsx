@@ -170,7 +170,7 @@ export default function MapPool() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar mapa o arma..."
-            className="w-full bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded-lg pl-9 pr-3 py-1.5 text-xs text-white placeholder:text-[#474c57] focus:outline-none transition-colors"
+            className="w-full bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded-lg pl-9 pr-3 py-1.5 text-base sm:text-xs text-white placeholder:text-[#474c57] focus:outline-none transition-colors"
           />
           {search && (
             <button

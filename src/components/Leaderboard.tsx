@@ -450,7 +450,7 @@ export default function Leaderboard() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar competidor por nick..."
-              className="w-full pl-9 pr-8 py-2 bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded-lg text-xs font-bold text-white placeholder:text-[#474c57] focus:outline-none transition-colors"
+              className="w-full pl-9 pr-8 py-2 bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded-lg text-base sm:text-xs font-bold text-white placeholder:text-[#474c57] focus:outline-none transition-colors"
             />
             {search && (
               <button
@@ -528,7 +528,7 @@ export default function Leaderboard() {
               onChange={(e) => setNewPlayerName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddPlayer()}
               placeholder="Nick del competidor a agregar..."
-              className="flex-1 max-w-sm px-3 py-1.5 bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded-lg text-xs font-bold text-white placeholder:text-[#474c57] focus:outline-none"
+              className="flex-1 max-w-sm px-3 py-1.5 bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded-lg text-base sm:text-xs font-bold text-white placeholder:text-[#474c57] focus:outline-none"
               autoFocus
             />
             <button

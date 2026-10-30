@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   UserPlus,
   Trash2,
@@ -37,6 +37,7 @@ export default function BracketGenerator() {
   const [backupState, setBackupState] = useState<TournamentState | null>(null);
   const [isEditingPlayers, setIsEditingPlayers] = useState(false);
   const [newPlayer, setNewPlayer] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -168,6 +169,7 @@ export default function BracketGenerator() {
     };
     setNewPlayer("");
     setError(null);
+    inputRef.current?.focus();
     if (isEditingPlayers) {
       setState(newState);
     } else {
@@ -304,12 +306,14 @@ export default function BracketGenerator() {
               Eliminación Directa 1v1 LAN
             </p>
           </div>
-          {saving && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#282a32] text-[11px] text-[#8d939e]">
-              <Loader2 className="w-3 h-3 animate-spin text-[#FF5500]" />
-              Guardando...
-            </div>
-          )}
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#282a32] text-[11px] text-[#8d939e] transition-opacity duration-150 ${
+              saving ? "opacity-100" : "opacity-0 pointer-events-none select-none"
+            }`}
+          >
+            <Loader2 className="w-3 h-3 animate-spin text-[#FF5500]" />
+            <span>Guardando...</span>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -385,7 +389,7 @@ export default function BracketGenerator() {
 
       {/* Player Management (Before generation or while editing) */}
       {(!state.generated || isEditingPlayers) && (
-        <div className="bg-[#1a1b1f] border border-[#282a32] rounded-xl p-6 space-y-5 shadow-xl animate-fade-in-up">
+        <div className="bg-[#1a1b1f] border border-[#282a32] rounded-xl p-6 space-y-5 shadow-xl">
           {/* Warning banner when in edit mode */}
           {isEditingPlayers && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-amber-950/20 border border-amber-500/40 rounded-lg text-xs text-amber-200">
@@ -432,12 +436,13 @@ export default function BracketGenerator() {
           <div className="space-y-2">
             <div className="flex gap-2">
               <input
+                ref={inputRef}
                 type="text"
                 value={newPlayer}
                 onChange={(e) => setNewPlayer(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addPlayer()}
                 placeholder="Ingresar nick del jugador..."
-                className="flex-1 min-w-0 bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded-lg px-4 py-2.5 text-sm font-semibold text-white placeholder:text-[#474c57] focus:outline-none transition-colors"
+                className="flex-1 min-w-0 bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded-lg px-4 py-2.5 text-base font-semibold text-white placeholder:text-[#474c57] focus:outline-none transition-colors"
               />
               <button
                 type="button"
