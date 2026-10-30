@@ -18,7 +18,7 @@ import {
 import type { TournamentState } from "@/lib/types";
 
 interface UserProfileModalProps {
-  onTabChange?: (tab: "bracket" | "leaderboard") => void;
+  onTabChange?: (tab: "bracket" | "leaderboard" | "maps") => void;
 }
 
 export default function UserProfileModal({ onTabChange }: UserProfileModalProps) {

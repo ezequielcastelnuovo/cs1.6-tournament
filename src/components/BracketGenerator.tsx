@@ -13,6 +13,8 @@ import {
   Shuffle,
   Edit3,
   ArrowLeft,
+  Swords,
+  X,
 } from "lucide-react";
 import type { TournamentState, Match } from "@/lib/types";
 import {
@@ -38,6 +40,7 @@ export default function BracketGenerator() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showResetModal, setShowResetModal] = useState(false);
 
   // Match detail and Veto modals
   const [activeDetailMatch, setActiveDetailMatch] = useState<Match | null>(null);
@@ -269,13 +272,14 @@ export default function BracketGenerator() {
   };
 
   const handleReset = () => {
-    if (
-      confirm("¿Reiniciar todo el torneo? Se perderán todos los datos y jugadores.")
-    ) {
-      setIsEditingPlayers(false);
-      setBackupState(null);
-      saveState(INITIAL_STATE);
-    }
+    setShowResetModal(true);
+  };
+
+  const handleConfirmReset = () => {
+    setIsEditingPlayers(false);
+    setBackupState(null);
+    saveState(INITIAL_STATE);
+    setShowResetModal(false);
   };
 
   if (loading) {
@@ -425,29 +429,35 @@ export default function BracketGenerator() {
           </div>
 
           {/* Add Player Input */}
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="text"
-              value={newPlayer}
-              onChange={(e) => setNewPlayer(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addPlayer()}
-              placeholder="Ingresar nick del jugador..."
-              className="flex-1 w-full bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded-lg px-4 py-2.5 text-sm font-semibold text-white placeholder:text-[#474c57] focus:outline-none transition-colors"
-            />
+          <div className="space-y-2">
             <div className="flex gap-2">
+              <input
+                type="text"
+                value={newPlayer}
+                onChange={(e) => setNewPlayer(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addPlayer()}
+                placeholder="Ingresar nick del jugador..."
+                className="flex-1 min-w-0 bg-[#141518] border border-[#282a32] focus:border-[#FF5500] rounded-lg px-4 py-2.5 text-sm font-semibold text-white placeholder:text-[#474c57] focus:outline-none transition-colors"
+              />
               <button
+                type="button"
                 onClick={addPlayer}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 bg-[#FF5500] hover:bg-[#ff6b1a] text-white text-xs font-extrabold uppercase tracking-wider rounded-lg transition-all shadow-md shadow-[#FF5500]/20 cursor-pointer"
+                className="w-28 shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#FF5500] hover:bg-[#ff6b1a] text-white text-xs font-extrabold uppercase tracking-wider rounded-lg transition-all shadow-md shadow-[#FF5500]/20 cursor-pointer"
               >
                 <UserPlus size={14} />
-                Añadir
+                <span>Añadir</span>
               </button>
-              {user &&
-                !state.participants.some(
-                  (p) =>
-                    p.toLowerCase() ===
-                    (user.displayName || user.username).toLowerCase()
-                ) && (
+            </div>
+
+            {/* Quick action to add own logged-in user without resizing the input */}
+            {user &&
+              !state.participants.some(
+                (p) =>
+                  p.toLowerCase() ===
+                  (user.displayName || user.username).toLowerCase()
+              ) && (
+                <div className="flex items-center justify-between text-xs bg-[#141518]/90 border border-[#282a32] rounded-lg px-3.5 py-2 text-[#8d939e]">
+                  <span>¿Participarás con tu cuenta activa?</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -468,45 +478,50 @@ export default function BracketGenerator() {
                       if (isEditingPlayers) setState(newState);
                       else saveState(newState);
                     }}
-                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2.5 bg-[#FF5500]/15 hover:bg-[#FF5500]/25 text-[#FF5500] border border-[#FF5500]/40 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap"
-                    title="Anotarme al torneo con mi cuenta activa"
+                    className="text-[#FF5500] hover:text-[#ff6b1a] font-bold uppercase text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
                   >
-                    <UserPlus size={14} />
-                    <span>Anotarme</span>
-                  </button>
-                )}
-            </div>
-          </div>
-
-          {/* Player List */}
-          {state.participants.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2">
-              {state.participants.map((player, i) => (
-                <div
-                  key={player}
-                  className="flex items-center justify-between bg-[#141518] border border-[#282a32] hover:border-[#383b46] rounded-lg px-3.5 py-2.5 group transition-all"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-[10px] text-[#FF5500] font-mono font-bold w-5">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span className="text-sm font-bold text-white truncate max-w-[140px]">
-                      {player}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => removePlayer(player)}
-                    title="Eliminar jugador"
-                    className="text-[#8d939e] hover:text-red-400 transition-colors opacity-70 group-hover:opacity-100 cursor-pointer"
-                  >
-                    <Trash2 size={14} />
+                    <UserPlus size={13} />
+                    <span>Anotarme ({user.displayName || user.username})</span>
                   </button>
                 </div>
-              ))}
-            </div>
-          )}
+              )}
+          </div>
 
-          {/* Action Buttons */}
+          {/* Player List with stable container */}
+          <div className="min-h-[58px] rounded-lg border border-[#282a32]/60 bg-[#141518]/30 p-2.5">
+            {state.participants.length === 0 ? (
+              <div className="h-10 flex items-center justify-center text-xs text-[#8d939e]/60 font-semibold">
+                No hay jugadores inscriptos aún. Escribe un nick arriba para comenzar.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {state.participants.map((player, i) => (
+                  <div
+                    key={player}
+                    className="flex items-center justify-between bg-[#141518] border border-[#282a32] hover:border-[#383b46] rounded-lg px-3.5 py-2.5 group transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-[10px] text-[#FF5500] font-mono font-bold w-5 shrink-0">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="text-sm font-bold text-white truncate">
+                        {player}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => removePlayer(player)}
+                      title="Eliminar jugador"
+                      className="text-[#8d939e] hover:text-red-400 transition-colors opacity-70 group-hover:opacity-100 cursor-pointer shrink-0 ml-2"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons - Stable height without jumping */}
           <div className="flex flex-col sm:flex-row gap-3 pt-1">
             {isEditingPlayers && (
               <button
@@ -515,26 +530,30 @@ export default function BracketGenerator() {
                 className="sm:w-1/3 py-3.5 bg-[#141518] hover:bg-[#22242a] border border-[#282a32] hover:border-[#FF5500] text-white font-extrabold text-xs uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 <ArrowLeft size={14} />
-                Cancelar (Volver al Bracket)
+                <span>Cancelar</span>
               </button>
             )}
 
-            {state.participants.length >= 2 ? (
-              <button
-                onClick={handleGenerate}
-                className={`py-3.5 bg-gradient-to-r from-[#FF5500] to-[#E04B00] text-white font-black uppercase tracking-wider rounded-lg hover:from-[#ff6b1a] hover:to-[#FF5500] transition-all shadow-xl shadow-[#FF5500]/25 cursor-pointer ${
-                  isEditingPlayers ? "flex-1" : "w-full"
-                }`}
-              >
-                {isEditingPlayers
-                  ? `Regenerar Bracket Oficial (${state.participants.length} Jugadores)`
-                  : `Generar Bracket Oficial (${state.participants.length} Jugadores)`}
-              </button>
-            ) : (
-              <p className="text-center text-xs text-[#8d939e] py-2 flex-1">
-                Se requieren al menos 2 jugadores para generar el bracket.
-              </p>
-            )}
+            <button
+              onClick={handleGenerate}
+              disabled={state.participants.length < 2}
+              className={`py-3.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                isEditingPlayers ? "flex-1" : "w-full"
+              } ${
+                state.participants.length >= 2
+                  ? "bg-gradient-to-r from-[#FF5500] to-[#E04B00] hover:from-[#ff6b1a] hover:to-[#FF5500] text-white shadow-xl shadow-[#FF5500]/25 cursor-pointer"
+                  : "bg-[#141518] border border-[#282a32] text-[#8d939e]/50 cursor-not-allowed opacity-60"
+              }`}
+            >
+              <Swords size={15} />
+              <span>
+                {state.participants.length >= 2
+                  ? isEditingPlayers
+                    ? `Regenerar Bracket Oficial (${state.participants.length} Jugadores)`
+                    : `Generar Bracket Oficial (${state.participants.length} Jugadores)`
+                  : "Se requieren al menos 2 jugadores para generar el bracket"}
+              </span>
+            </button>
           </div>
         </div>
       )}
@@ -569,6 +588,48 @@ export default function BracketGenerator() {
           onMapSelected={handleMapSelected}
           onClose={() => setActiveVetoMatch(null)}
         />
+      )}
+
+      {/* Modal personalizado para reiniciar el torneo con estilo FaceIT */}
+      {showResetModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in-up"
+          onClick={() => setShowResetModal(false)}
+        >
+          <div
+            className="bg-[#141518] border-2 border-red-500/50 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-16 h-16 rounded-full bg-red-950/50 border-2 border-red-500/40 flex items-center justify-center mx-auto mb-4 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.3)]">
+              <AlertTriangle size={32} />
+            </div>
+
+            <h3 className="text-xl font-black uppercase text-white tracking-wider mb-2">
+              ¿Reiniciar Torneo Completo?
+            </h3>
+
+            <p className="text-xs text-[#8d939e] leading-relaxed mb-6">
+              Se eliminarán todos los jugadores inscriptos, los cruces de la bracket, los resultados cargados y los mapas vetados. Esta acción no se puede deshacer.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowResetModal(false)}
+                className="flex-1 py-3 bg-[#1a1b1f] hover:bg-[#22242a] text-[#8d939e] hover:text-white border border-[#282a32] text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReset}
+                className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/30 transition-all cursor-pointer"
+              >
+                Sí, Reiniciar Todo
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

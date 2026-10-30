@@ -13,6 +13,7 @@ import {
   Flame,
   ArrowRight,
   Sparkles,
+  AlertCircle,
 } from "lucide-react";
 import type { Match } from "@/lib/types";
 import { CS_MAPS } from "@/lib/types";
@@ -54,12 +55,14 @@ export default function MatchDetailModal({
   const [selectedWinner, setSelectedWinner] = useState<string | null>(
     match.winner || null
   );
+  const [scoreError, setScoreError] = useState<string | null>(null);
 
   const selectedMapData = match.selectedMap
     ? CS_MAPS.find((m) => m.name === match.selectedMap)
     : null;
 
   const handleP1Change = (raw: string) => {
+    setScoreError(null);
     let clean = raw.replace(/\D/g, "");
     if (clean.length > 1 && clean.startsWith("0")) {
       clean = clean.replace(/^0+/, "") || "0";
@@ -74,6 +77,7 @@ export default function MatchDetailModal({
   };
 
   const handleP2Change = (raw: string) => {
+    setScoreError(null);
     let clean = raw.replace(/\D/g, "");
     if (clean.length > 1 && clean.startsWith("0")) {
       clean = clean.replace(/^0+/, "") || "0";
@@ -91,16 +95,35 @@ export default function MatchDetailModal({
     e.preventDefault();
     if (!hasBothPlayers) return;
 
-    const num1 = p1Kills === "" ? 0 : parseInt(p1Kills, 10);
-    const num2 = p2Kills === "" ? 0 : parseInt(p2Kills, 10);
+    if (p1Kills.trim() === "" || p2Kills.trim() === "") {
+      setScoreError("Obligatorio: Debes ingresar el score final de kills de ambos jugadores antes de guardar.");
+      return;
+    }
+
+    const num1 = parseInt(p1Kills, 10);
+    const num2 = parseInt(p2Kills, 10);
+
+    if (isNaN(num1) || isNaN(num2)) {
+      setScoreError("Ingresa números válidos de kills.");
+      return;
+    }
+
+    if (num1 === 0 && num2 === 0) {
+      setScoreError("El score no puede ser 0-0. Ingresa las kills reales del partido.");
+      return;
+    }
 
     let winner = selectedWinner;
     if (!winner) {
       if (num1 > num2) winner = match.player1;
       else if (num2 > num1) winner = match.player2;
-      else winner = match.player1; // Tiebreaker default
+      else {
+        setScoreError("Hay empate en kills. Selecciona manualmente al ganador abajo antes de guardar.");
+        return;
+      }
     }
 
+    setScoreError(null);
     onSaveScore(match.id, num1, num2, winner || undefined);
     onClose();
   };
@@ -340,6 +363,14 @@ export default function MatchDetailModal({
                   </button>
                 </div>
               </div>
+
+              {/* Error validation banner */}
+              {scoreError && (
+                <div className="flex items-center gap-2 p-3 bg-red-950/40 border border-red-500/50 rounded-xl text-xs text-red-200">
+                  <AlertCircle size={16} className="text-red-400 shrink-0" />
+                  <span className="font-semibold">{scoreError}</span>
+                </div>
+              )}
 
               {/* Submit Button */}
               <div className="flex gap-2.5 pt-2">

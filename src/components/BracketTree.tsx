@@ -335,10 +335,14 @@ export default function BracketTree({
                         <button
                           key={idx}
                           type="button"
-                          disabled={!canClick}
-                          onClick={() =>
-                            canClick && onSelectWinner(match.id, player)
-                          }
+                          disabled={!canClick && !match.winner}
+                          onClick={() => {
+                            if (onOpenMatchDetail && (canClick || match.winner)) {
+                              onOpenMatchDetail(match);
+                            } else if (canClick) {
+                              onSelectWinner(match.id, player);
+                            }
+                          }}
                           className={`w-full px-2.5 py-1.5 text-left text-xs font-bold flex items-center justify-between gap-2 transition-all ${
                             isWinner
                               ? "bg-[#FF5500]/15 text-white"
@@ -348,6 +352,13 @@ export default function BracketTree({
                               ? "bg-[#1a1b1f] hover:bg-[#22242a] text-white hover:text-[#FF5500] cursor-pointer"
                               : "bg-[#1a1b1f] text-[#8d939e]"
                           }`}
+                          title={
+                            canClick
+                              ? "Cargar score y definir ganador"
+                              : match.winner
+                              ? "Ver resultado del duelo"
+                              : undefined
+                          }
                         >
                           <div className="flex items-center gap-2 truncate min-w-0">
                             <span

@@ -4,12 +4,13 @@ import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import BracketGenerator from "@/components/BracketGenerator";
 import Leaderboard from "@/components/Leaderboard";
+import MapPool from "@/components/MapPool";
 import { useAuth } from "@/context/AuthContext";
 import { Lock, LogIn, UserPlus, Shield, Swords, Trophy, Map, Sparkles, Loader2 } from "lucide-react";
 
 export default function Home() {
   const { user, isLoading, openAuthModal } = useAuth();
-  const [activeTab, setActiveTab] = useState<"bracket" | "leaderboard">("bracket");
+  const [activeTab, setActiveTab] = useState<"bracket" | "leaderboard" | "maps">("bracket");
 
   return (
     <>
@@ -111,6 +112,7 @@ export default function Home() {
           <>
             {activeTab === "bracket" && <BracketGenerator />}
             {activeTab === "leaderboard" && <Leaderboard />}
+            {activeTab === "maps" && <MapPool />}
           </>
         )}
       </main>

@@ -6,8 +6,8 @@ import AuthModal from "@/components/AuthModal";
 import UserProfileModal from "@/components/UserProfileModal";
 
 interface NavigationProps {
-  activeTab: "bracket" | "leaderboard";
-  onTabChange: (tab: "bracket" | "leaderboard") => void;
+  activeTab: "bracket" | "leaderboard" | "maps";
+  onTabChange: (tab: "bracket" | "leaderboard" | "maps") => void;
 }
 
 export default function Navigation({ activeTab, onTabChange }: NavigationProps) {
@@ -68,6 +68,18 @@ export default function Navigation({ activeTab, onTabChange }: NavigationProps) 
                 <Trophy size={14} className="shrink-0" />
                 <span className="hidden md:inline">Leaderboard</span>
                 <span className="md:hidden">Tabla</span>
+              </button>
+              <button
+                onClick={() => onTabChange("maps")}
+                className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-md text-[11px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer ${
+                  activeTab === "maps"
+                    ? "bg-[#FF5500] text-white shadow-lg shadow-[#FF5500]/25"
+                    : "text-[#8d939e] hover:text-white hover:bg-[#1a1b1f]"
+                }`}
+              >
+                <Map size={14} className="shrink-0" />
+                <span className="hidden md:inline">Map Pool</span>
+                <span className="md:hidden">Mapas</span>
               </button>
             </nav>
 
